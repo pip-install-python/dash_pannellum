@@ -1,0 +1,11 @@
+include dash_pannellum/dash_pannellum.min.js
+include dash_pannellum/dash_pannellum.min.js.map
+include dash_pannellum/async-*.js
+include dash_pannellum/async-*.js.map
+include dash_pannellum/*-shared.js
+include dash_pannellum/*-shared.js.map
+include dash_pannellum/metadata.json
+include dash_pannellum/package-info.json
+include README.md
+include LICENSE
+include package.json
