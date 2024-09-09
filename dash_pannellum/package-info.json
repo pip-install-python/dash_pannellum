@@ -1,6 +1,6 @@
 {
   "name": "dash_pannellum",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "open source panorama viewer for the web. Built using HTML5, CSS3, JavaScript, and WebGL, it is plug-in free.",
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
   "author": "pip install python <pipinstallpython@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "file-loader": "^6.2.0",
     "ramda": "^0.26.1",
     "video.js": "^8.17.3"
   },

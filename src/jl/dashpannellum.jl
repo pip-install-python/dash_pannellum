@@ -6,26 +6,27 @@ export dashpannellum
     dashpannellum(;kwargs...)
 
 A DashPannellum component.
-
+DashPannellum is a component for displaying panoramic images and videos.
+It supports various modes including tours, multi-resolution images, and 360° videos.
 Keyword arguments:
-- `id` (String; optional)
-- `currentScene` (String; optional)
-- `customControls` (Bool; optional)
-- `height` (String; optional)
-- `loaded` (Bool; optional)
-- `multiRes` (Dict; optional)
-- `pitch` (Real; optional)
-- `showCenterDot` (Bool; optional)
-- `tour` (Dict; optional)
-- `video` (optional): . video has the following type: lists containing elements 'sources', 'poster'.
+- `id` (String; optional): The ID used to identify this component in Dash callbacks.
+- `currentScene` (String; optional): The ID of the current scene in tour mode.
+- `customControls` (Bool; optional): If true, enables custom controls for the panorama viewer.
+- `height` (String; optional): The height of the panorama viewer.
+- `loaded` (Bool; optional): Indicates whether the panorama has been loaded.
+- `multiRes` (Dict; optional): Configuration object for multi-resolution panoramas.
+- `pitch` (Real; optional): The current pitch of the panorama view.
+- `showCenterDot` (Bool; optional): If true, displays a center dot in the panorama viewer.
+- `tour` (Dict; optional): Configuration object for the tour mode.
+- `video` (optional): Configuration object for video panoramas.. video has the following type: lists containing elements 'sources', 'poster'.
 Those elements have the following types:
   - `sources` (required): . sources has the following type: Array of lists containing elements 'src', 'type'.
 Those elements have the following types:
   - `src` (String; required)
   - `type` (String; required)s
   - `poster` (String; optional)
-- `width` (String; optional)
-- `yaw` (Real; optional)
+- `width` (String; optional): The width of the panorama viewer.
+- `yaw` (Real; optional): The current yaw of the panorama view.
 """
 function dashpannellum(; kwargs...)
         available_props = Symbol[:id, :currentScene, :customControls, :height, :loaded, :multiRes, :pitch, :showCenterDot, :tour, :video, :width, :yaw]

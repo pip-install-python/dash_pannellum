@@ -80,6 +80,15 @@ module.exports = (env, argv) => {
                         },
                     ],
                 },
+                {
+                    test: /assets\/.*\.js$/,
+                    type: 'javascript/auto',
+                    use: [
+                        {
+                            loader: 'babel-loader',
+                        },
+                    ],
+                },
             ],
         },
         optimization: {

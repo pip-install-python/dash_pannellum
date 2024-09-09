@@ -1,6 +1,6 @@
 {
   "src/lib/components/DashPannellum.react.js": {
-    "description": "",
+    "description": "DashPannellum is a component for displaying panoramic images and videos.\nIt supports various modes including tours, multi-resolution images, and 360\u00b0 videos.",
     "displayName": "DashPannellum",
     "methods": [],
     "props": {
@@ -9,14 +9,14 @@
           "name": "string"
         },
         "required": false,
-        "description": ""
+        "description": "The ID used to identify this component in Dash callbacks."
       },
       "width": {
         "type": {
           "name": "string"
         },
         "required": false,
-        "description": "",
+        "description": "The width of the panorama viewer.",
         "defaultValue": {
           "value": "'600px'",
           "computed": false
@@ -27,7 +27,7 @@
           "name": "string"
         },
         "required": false,
-        "description": "",
+        "description": "The height of the panorama viewer.",
         "defaultValue": {
           "value": "'400px'",
           "computed": false
@@ -38,14 +38,14 @@
           "name": "object"
         },
         "required": false,
-        "description": ""
+        "description": "Configuration object for the tour mode."
       },
       "multiRes": {
         "type": {
           "name": "object"
         },
         "required": false,
-        "description": ""
+        "description": "Configuration object for multi-resolution panoramas."
       },
       "video": {
         "type": {
@@ -75,14 +75,14 @@
           }
         },
         "required": false,
-        "description": ""
+        "description": "Configuration object for video panoramas."
       },
       "customControls": {
         "type": {
           "name": "bool"
         },
         "required": false,
-        "description": "",
+        "description": "If true, enables custom controls for the panorama viewer.",
         "defaultValue": {
           "value": "false",
           "computed": false
@@ -93,7 +93,7 @@
           "name": "bool"
         },
         "required": false,
-        "description": "",
+        "description": "If true, displays a center dot in the panorama viewer.",
         "defaultValue": {
           "value": "false",
           "computed": false
@@ -104,35 +104,35 @@
           "name": "func"
         },
         "required": false,
-        "description": ""
+        "description": "Dash-assigned callback that should be called to report property changes\nto Dash, to make them available for callbacks."
       },
       "loaded": {
         "type": {
           "name": "bool"
         },
         "required": false,
-        "description": ""
+        "description": "Indicates whether the panorama has been loaded."
       },
       "pitch": {
         "type": {
           "name": "number"
         },
         "required": false,
-        "description": ""
+        "description": "The current pitch of the panorama view."
       },
       "yaw": {
         "type": {
           "name": "number"
         },
         "required": false,
-        "description": ""
+        "description": "The current yaw of the panorama view."
       },
       "currentScene": {
         "type": {
           "name": "string"
         },
         "required": false,
-        "description": ""
+        "description": "The ID of the current scene in tour mode."
       }
     }
   }

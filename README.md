@@ -1,98 +1,204 @@
-# dash pannellum
+## Dash Pannellum
+Dash Pannellum is a Dash component that integrates the Pannellum panorama viewer into your Dash applications. It allows you to display interactive 360° panoramas, including equirectangular images, cube maps, and 360° videos.
+Features
 
-dash pannellum is a Dash component library.
+- Display equirectangular panoramas
+- Support for multi-resolution panoramas
+- 360° video playback
+- Tour mode with multiple scenes and hotspots
+- Customizable controls
+- Center dot option for orientation
 
-open source panorama viewer for the web. Built using HTML5, CSS3, JavaScript, and WebGL, it is plug-in free.
+### Installation
+`pip install dash-pannellum`
 
-Get started with:
-1. Install Dash and its dependencies: https://dash.plotly.com/installation
-2. Run `python usage.py`
-3. Visit http://localhost:8050 in your web browser
+### Usage
+Here's a simple example of how to use the DashPannellum component:
+    
+```python
+import dash
+from dash import html
+import dash_pannellum
 
-## Contributing
+app = dash.Dash(__name__)
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md)
+app.layout = html.Div([
+    dash_pannellum.DashPannellum(
+        id='panorama',
+        tour={
+            "default": {
+                "firstScene": "scene1",
+                "sceneFadeDuration": 1000
+            },
+            "scenes": {
+                "scene1": {
+                    "title": "Example Panorama",
+                    "hfov": 110,
+                    "pitch": -3,
+                    "yaw": 117,
+                    "type": "equirectangular",
+                    "panorama": "https://pannellum.org/images/from-tree.jpg"
+                }
+            }
+        },
+        width='100%',
+        height='400px',
+    )
+])
 
-### Install dependencies
+if __name__ == '__main__':
+    app.run_server(debug=True)
+```
+### Component Properties
 
-If you have selected install_dependencies during the prompt, you can skip this part.
+- `id` (string): The ID used to identify this component in Dash callbacks.
+- `width` (string): The width of the panorama viewer.
+- `height` (string): The height of the panorama viewer.
+- `tour` (dict): Configuration object for the tour mode.
+- `multiRes` (dict): Configuration object for multi-resolution panoramas.
+- `video` (dict): Configuration object for video panoramas.
+- `customControls` (boolean): If true, enables custom controls for the panorama viewer.
+- `showCenterDot` (boolean): If true, displays a center dot in the panorama viewer.
+- `loaded` (boolean; read-only): Indicates whether the panorama has been loaded.
+- `pitch` (number; read-only): The current pitch of the panorama view.
+- `yaw` (number; read-only): The current yaw of the panorama view.
+- `currentScene` (string; read-only): The ID of the current scene in tour mode.
 
-1. Install npm packages
-    ```
-    $ npm install
-    ```
-2. Create a virtual env and activate.
-    ```
-    $ virtualenv venv
-    $ . venv/bin/activate
-    ```
-    _Note: venv\Scripts\activate for windows_
+## Examples
+___
+### Tour Mode
+```python
+tour_config = {
+    "default": {
+        "firstScene": "scene1",
+        "sceneFadeDuration": 1000
+    },
+    "scenes": {
+        "scene1": {
+            "title": "First Scene",
+            "hfov": 110,
+            "pitch": -3,
+            "yaw": 117,
+            "type": "equirectangular",
+            "panorama": "https://pannellum.org/images/from-tree.jpg",
+            "hotSpots": [
+                {
+                    "pitch": -2.1,
+                    "yaw": 132.9,
+                    "type": "scene",
+                    "text": "Go to Second Scene",
+                    "sceneId": "scene2"
+                }
+            ]
+        },
+        "scene2": {
+            "title": "Second Scene",
+            "hfov": 110,
+            "yaw": 5,
+            "type": "equirectangular",
+            "panorama": "https://pannellum.org/images/bma-0.jpg",
+            "hotSpots": [
+                {
+                    "pitch": -0.6,
+                    "yaw": 37.1,
+                    "type": "scene",
+                    "text": "Go to First Scene",
+                    "sceneId": "scene1",
+                    "targetYaw": -23,
+                    "targetPitch": 2
+                }
+            ]
+        }
+    }
+}
 
-3. Install python packages required to build components.
-    ```
-    $ pip install -r requirements.txt
-    ```
-4. Install the python packages for testing (optional)
-    ```
-    $ pip install -r tests/requirements.txt
-    ```
+dash_pannellum.DashPannellum(
+    id='tour-component',
+    tour=tour_config,
+    width='100%',
+    height='400px',
+)
+```
+### Partial Panorama
+Partial panoramas can be displayed by specifying the extents of the equirectangular panorama using the haov, vaov, and vOffset parameters. These parameters define the horizontal angle of view, vertical angle of view, and vertical offset, respectively.
+```python
+partial_panorama_config = {
+    "type": "equirectangular",
+    "panorama": "https://pannellum.org/images/charles-street.jpg",
+    "haov": 149.87,
+    "vaov": 54.15,
+    "vOffset": 1.17
+}
 
-### Write your component code in `src/lib/components/DashPannellum.react.js`.
+dash_pannellum.DashPannellum(
+    id='partial-panorama-component',
+    tour={"default": {"firstScene": "scene1"}, "scenes": {"scene1": partial_panorama_config}},
+    width='100%',
+    height='400px',
+)
+```
+In this example:
 
-- The demo app is in `src/demo` and you will import your example component code into your demo app.
-- Test your code in a Python environment:
-    1. Build your code
-        ```
-        $ npm run build
-        ```
-    2. Run and modify the `usage.py` sample dash app:
-        ```
-        $ python usage.py
-        ```
-- Write tests for your component.
-    - A sample test is available in `tests/test_usage.py`, it will load `usage.py` and you can then automate interactions with selenium.
-    - Run the tests with `$ pytest tests`.
-    - The Dash team uses these types of integration tests extensively. Browse the Dash component code on GitHub for more examples of testing (e.g. https://github.com/plotly/dash-core-components)
-- Add custom styles to your component by putting your custom CSS files into your distribution folder (`dash_pannellum`).
-    - Make sure that they are referenced in `MANIFEST.in` so that they get properly included when you're ready to publish your component.
-    - Make sure the stylesheets are added to the `_css_dist` dict in `dash_pannellum/__init__.py` so dash will serve them automatically when the component suite is requested.
-- [Review your code](./review_checklist.md)
+- `haov`: 149.87 degrees - Specifies the horizontal angle of view.
+- `vaov`: 54.15 degrees - Specifies the vertical angle of view.
+- `vOffset`: 1.17 degrees - Specifies the vertical offset of the panorama.
 
-### Create a production build and publish:
+These parameters allow you to display panoramas that don't cover a full 360° horizontally or 180° vertically. The vOffset parameter is particularly useful when the panorama is not centered vertically.
+### Multi-resolution Panorama
+```python
+multiRes_config = {
+    "basePath": "https://pannellum.org/images/multires/library",
+    "path": "/%l/%s%y_%x",
+    "fallbackPath": "/fallback/%s",
+    "extension": "jpg",
+    "tileResolution": 512,
+    "maxLevel": 6,
+    "cubeResolution": 8432
+}
 
-1. Build your code:
-    ```
-    $ npm run build
-    ```
-2. Create a Python distribution
-    ```
-    $ python setup.py sdist bdist_wheel
-    ```
-    This will create source and wheel distribution in the generated the `dist/` folder.
-    See [PyPA](https://packaging.python.org/guides/distributing-packages-using-setuptools/#packaging-your-project)
-    for more information.
+dash_pannellum.DashPannellum(
+    id='multires-component',
+    multiRes=multiRes_config,
+    width='100%',
+    height='400px',
+)
+```
+### Video Panorama
+```python
+video_config = {
+    "sources": [
+        {"src": "https://bitmovin-a.akamaihd.net/content/playhouse-vr/progressive.mp4", "type": "video/mp4"},
+    ],
+    "poster": "https://bitmovin-a.akamaihd.net/content/playhouse-vr/poster.jpg"
+}
 
-3. Test your tarball by copying it into a new environment and installing it locally:
-    ```
-    $ pip install dash_pannellum-0.0.1.tar.gz
-    ```
+dash_pannellum.DashPannellum(
+    id='video-component',
+    video=video_config,
+    width='100%',
+    height='400px',
+)
+```
+### Callbacks
+You can use Dash callbacks to interact with the component. Here's an example that updates an output based on the panorama's current state:
+python
+```python
+from dash.dependencies import Input, Output
 
-4. If it works, then you can publish the component to NPM and PyPI:
-    1. Publish on PyPI
-        ```
-        $ twine upload dist/*
-        ```
-    2. Cleanup the dist folder (optional)
-        ```
-        $ rm -rf dist
-        ```
-    3. Publish on NPM (Optional if chosen False in `publish_on_npm`)
-        ```
-        $ npm publish
-        ```
-        _Publishing your component to NPM will make the JavaScript bundles available on the unpkg CDN. By default, Dash serves the component library's CSS and JS locally, but if you choose to publish the package to NPM you can set `serve_locally` to `False` and you may see faster load times._
+@app.callback(
+    Output('output-div', 'children'),
+    Input('panorama', 'loaded'),
+    Input('panorama', 'pitch'),
+    Input('panorama', 'yaw'),
+    Input('panorama', 'currentScene')
+)
+def update_output(loaded, pitch, yaw, current_scene):
+    if loaded and pitch is not None and yaw is not None:
+        return f'Current Scene: {current_scene}, Pitch: {pitch:.2f}, Yaw: {yaw:.2f}'
+    return 'Loading panorama...'
+```
+### Contributing
+Contributions to dash-pannellum are welcome! Please refer to the project's issues on GitHub for any feature requests or bug reports.
 
-5. Share your component with the community! https://community.plotly.com/c/dash
-    1. Publish this repository to GitHub
-    2. Tag your GitHub repository with the plotly-dash tag so that it appears here: https://github.com/topics/plotly-dash
-    3. Create a post in the Dash community forum: https://community.plotly.com/c/dash
+### License
+This project is licensed under the MIT License.

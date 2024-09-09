@@ -1,6 +1,6 @@
 Package: dashPannellum
 Title: open source panorama viewer for the web. Built using HTML5, CSS3, JavaScript, and WebGL, it is plug-in free.
-Version: 0.0.1
+Version: 0.0.2
 Description: open source panorama viewer for the web. Built using HTML5, CSS3, JavaScript, and WebGL, it is plug-in free.
 Depends: R (>= 3.0.2)
 Imports: 

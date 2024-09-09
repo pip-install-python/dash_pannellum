@@ -6,7 +6,7 @@
 \title{DashPannellum component}
 
 \description{
-
+DashPannellum is a component for displaying panoramic images and videos. It supports various modes including tours, multi-resolution images, and 360° videos.
 }
 
 \usage{
@@ -17,23 +17,23 @@ yaw=NULL)
 }
 
 \arguments{
-\item{id}{Character. }
+\item{id}{Character. The ID used to identify this component in Dash callbacks.}
 
-\item{currentScene}{Character. }
+\item{currentScene}{Character. The ID of the current scene in tour mode.}
 
-\item{customControls}{Logical. }
+\item{customControls}{Logical. If true, enables custom controls for the panorama viewer.}
 
-\item{height}{Character. }
+\item{height}{Character. The height of the panorama viewer.}
 
-\item{loaded}{Logical. }
+\item{loaded}{Logical. Indicates whether the panorama has been loaded.}
 
-\item{multiRes}{Named list. }
+\item{multiRes}{Named list. Configuration object for multi-resolution panoramas.}
 
-\item{pitch}{Numeric. }
+\item{pitch}{Numeric. The current pitch of the panorama view.}
 
-\item{showCenterDot}{Logical. }
+\item{showCenterDot}{Logical. If true, displays a center dot in the panorama viewer.}
 
-\item{tour}{Named list. }
+\item{tour}{Named list. Configuration object for the tour mode.}
 
 \item{video}{Lists containing elements 'sources', 'poster'.
 those elements have the following types:
@@ -41,11 +41,11 @@ those elements have the following types:
 those elements have the following types:
   - src (character; required)
   - type (character; required)s
-  - poster (character; optional). }
+  - poster (character; optional). Configuration object for video panoramas.}
 
-\item{width}{Character. }
+\item{width}{Character. The width of the panorama viewer.}
 
-\item{yaw}{Numeric. }
+\item{yaw}{Numeric. The current yaw of the panorama view.}
 }
 
 \value{named list of JSON elements corresponding to React.js properties and their values}

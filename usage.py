@@ -98,6 +98,7 @@ app.layout = html.Div([
         width='100%',
         height='400px',
     ),
+    html.Div(id='video-output'),
     dcc.Interval(id='interval-component', interval=100, n_intervals=0)
 ])
 
@@ -127,6 +128,19 @@ def update_multires_output(loaded, pitch, yaw, n):
     if loaded and pitch is not None and yaw is not None:
         return f'Camera Position - Pitch: {pitch:.2f}, Yaw: {yaw:.2f}'
     return 'Loading multiresolution panorama...'
+
+
+@app.callback(
+    Output('video-output', 'children'),
+    Input('video-component', 'loaded'),
+    Input('video-component', 'pitch'),
+    Input('video-component', 'yaw'),
+    Input('interval-component', 'n_intervals')
+)
+def update_video_output(loaded, pitch, yaw, n):
+    if loaded and pitch is not None and yaw is not None:
+        return f'Camera Position - Pitch: {pitch:.2f}, Yaw: {yaw:.2f}'
+    return 'Camera Position - Pitch: 0.00, Yaw: 0.00'
 
 
 if __name__ == '__main__':
