@@ -1,6 +1,6 @@
 {
   "name": "dash_pannellum",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "open source panorama viewer for the web. Built using HTML5, CSS3, JavaScript, and WebGL, it is plug-in free.",
   "repository": {
     "type": "git",

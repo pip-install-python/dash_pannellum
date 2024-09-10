@@ -9,7 +9,7 @@ tour_config = {
     "default": {
         "firstScene": "circle",
         "author": "Pip Install Python",
-        "sceneFadeDuration": 1000
+        "sceneFadeDuration": 1000,
     },
     "scenes": {
         "circle": {
@@ -18,7 +18,8 @@ tour_config = {
             "pitch": -3,
             "yaw": 117,
             "type": "equirectangular",
-            "panorama": "https://pannellum.org/images/from-tree.jpg",
+            "panorama": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Panoramica_di_piazza_Garibaldi_-_Palagonia.jpg/1600px-Panoramica_di_piazza_Garibaldi_-_Palagonia.jpg",
+            "autoLoad": True,  # Add this line to each scene
             "hotSpots": [
                 {
                     "pitch": -2.1,
@@ -35,6 +36,7 @@ tour_config = {
             "yaw": 5,
             "type": "equirectangular",
             "panorama": "https://pannellum.org/images/bma-0.jpg",
+            # "autoLoad": True,  # Add this line to each scene
             "hotSpots": [
                 {
                     "pitch": -0.6,
@@ -57,7 +59,7 @@ multiRes_config = {
     "extension": "jpg",
     "tileResolution": 512,
     "maxLevel": 6,
-    "cubeResolution": 8432
+    "cubeResolution": 8432,
 }
 
 video_config = {
@@ -76,6 +78,7 @@ app.layout = html.Div([
         showCenterDot=True,
         width='100%',
         height='400px',
+        autoLoad=False
     ),
     html.Div(id='tour-output'),
     html.Hr(),
@@ -85,6 +88,7 @@ app.layout = html.Div([
         multiRes=multiRes_config,
         customControls=True,
         showCenterDot=True,
+        autoLoad=False,
         width='100%',
         height='400px',
     ),
@@ -95,6 +99,7 @@ app.layout = html.Div([
         id='video-component',
         video=video_config,
         showCenterDot=True,
+        autoLoad=False,
         width='100%',
         height='400px',
     ),
@@ -105,43 +110,37 @@ app.layout = html.Div([
 
 @app.callback(
     Output('tour-output', 'children'),
-    Input('tour-component', 'loaded'),
     Input('tour-component', 'pitch'),
     Input('tour-component', 'yaw'),
     Input('tour-component', 'currentScene'),
     Input('interval-component', 'n_intervals')
 )
-def update_tour_output(loaded, pitch, yaw, current_scene, n):
-    if loaded and pitch is not None and yaw is not None and current_scene is not None:
+def update_tour_output(pitch, yaw, current_scene, n):
+    if pitch is not None and yaw is not None and current_scene is not None:
         return f'Current Scene: {current_scene}, Camera Position - Pitch: {pitch:.2f}, Yaw: {yaw:.2f}'
     return 'Loading tour...'
 
-
 @app.callback(
     Output('multires-output', 'children'),
-    Input('multires-component', 'loaded'),
     Input('multires-component', 'pitch'),
     Input('multires-component', 'yaw'),
     Input('interval-component', 'n_intervals')
 )
-def update_multires_output(loaded, pitch, yaw, n):
-    if loaded and pitch is not None and yaw is not None:
+def update_multires_output(pitch, yaw, n):
+    if pitch is not None and yaw is not None:
         return f'Camera Position - Pitch: {pitch:.2f}, Yaw: {yaw:.2f}'
     return 'Loading multiresolution panorama...'
 
-
 @app.callback(
     Output('video-output', 'children'),
-    Input('video-component', 'loaded'),
     Input('video-component', 'pitch'),
     Input('video-component', 'yaw'),
     Input('interval-component', 'n_intervals')
 )
-def update_video_output(loaded, pitch, yaw, n):
-    if loaded and pitch is not None and yaw is not None:
+def update_video_output(pitch, yaw, n):
+    if pitch is not None and yaw is not None:
         return f'Camera Position - Pitch: {pitch:.2f}, Yaw: {yaw:.2f}'
     return 'Camera Position - Pitch: 0.00, Yaw: 0.00'
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)

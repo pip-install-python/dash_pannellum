@@ -13,6 +13,10 @@ Keyword arguments:
 - id (string; optional):
     The ID used to identify this component in Dash callbacks.
 
+- autoLoad (boolean; default False):
+    If True, automatically loads the panorama without user
+    interaction.
+
 - currentScene (string; optional):
     The ID of the current scene in tour mode.
 
@@ -21,9 +25,6 @@ Keyword arguments:
 
 - height (string; default '400px'):
     The height of the panorama viewer.
-
-- loaded (boolean; optional):
-    Indicates whether the panorama has been loaded.
 
 - multiRes (dict; optional):
     Configuration object for multi-resolution panoramas.
@@ -62,10 +63,10 @@ Keyword arguments:
     _namespace = 'dash_pannellum'
     _type = 'DashPannellum'
     @_explicitize_args
-    def __init__(self, id=Component.UNDEFINED, width=Component.UNDEFINED, height=Component.UNDEFINED, tour=Component.UNDEFINED, multiRes=Component.UNDEFINED, video=Component.UNDEFINED, customControls=Component.UNDEFINED, showCenterDot=Component.UNDEFINED, loaded=Component.UNDEFINED, pitch=Component.UNDEFINED, yaw=Component.UNDEFINED, currentScene=Component.UNDEFINED, **kwargs):
-        self._prop_names = ['id', 'currentScene', 'customControls', 'height', 'loaded', 'multiRes', 'pitch', 'showCenterDot', 'tour', 'video', 'width', 'yaw']
+    def __init__(self, id=Component.UNDEFINED, width=Component.UNDEFINED, height=Component.UNDEFINED, tour=Component.UNDEFINED, multiRes=Component.UNDEFINED, video=Component.UNDEFINED, customControls=Component.UNDEFINED, showCenterDot=Component.UNDEFINED, autoLoad=Component.UNDEFINED, pitch=Component.UNDEFINED, yaw=Component.UNDEFINED, currentScene=Component.UNDEFINED, **kwargs):
+        self._prop_names = ['id', 'autoLoad', 'currentScene', 'customControls', 'height', 'multiRes', 'pitch', 'showCenterDot', 'tour', 'video', 'width', 'yaw']
         self._valid_wildcard_attributes =            []
-        self.available_properties = ['id', 'currentScene', 'customControls', 'height', 'loaded', 'multiRes', 'pitch', 'showCenterDot', 'tour', 'video', 'width', 'yaw']
+        self.available_properties = ['id', 'autoLoad', 'currentScene', 'customControls', 'height', 'multiRes', 'pitch', 'showCenterDot', 'tour', 'video', 'width', 'yaw']
         self.available_wildcard_properties =            []
         _explicit_args = kwargs.pop('_explicit_args')
         _locals = locals()

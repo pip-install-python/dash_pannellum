@@ -16,6 +16,7 @@ const DashPannellum = (props) => {
         video,
         customControls,
         showCenterDot,
+        autoLoad,
         setProps
     } = props;
 
@@ -61,7 +62,7 @@ const DashPannellum = (props) => {
                 }
             }
         };
-    }, [tour, multiRes, video]);
+    }, [tour, multiRes, video, autoLoad]);
 
     const loadScript = (src) => {
         return new Promise((resolve, reject) => {
@@ -92,14 +93,14 @@ const DashPannellum = (props) => {
                 playerRef.current = videojs(viewerRef.current, {
                     controls: true,
                     autoplay: false,
-                    preload: 'auto',
+                    preload: autoLoad ? 'auto' : 'metadata',
                     width: '100%',
                     height: '100%',
                 });
 
                 // Initialize Pannellum with the video.js pannellum plugin
                 playerRef.current.on('loadedmetadata', () => {
-                    playerRef.current.pannellum({});  // Activate pannellum plugin for 360 video
+                    playerRef.current.pannellum({ autoLoad: autoLoad });
 
                     if (setProps) {
                         setProps({ loaded: true });
@@ -124,17 +125,21 @@ const DashPannellum = (props) => {
             if (multiRes) {
                 config = {
                     type: "multires",
-                    multiRes: multiRes
+                    multiRes: multiRes,
+                    autoLoad: autoLoad
                 };
             } else if (tour) {
-                config = tour;
+                config = {
+                    ...tour,
+                    autoLoad: autoLoad
+                };
             }
 
             if (config) {
                 playerRef.current = window.pannellum.viewer(viewerRef.current, config);
 
                 if (setProps) {
-                    setProps({ loaded: true });
+                    setProps({ loaded: autoLoad });
                 }
 
                 // Set up an interval to update pitch and yaw for the panorama
@@ -201,7 +206,8 @@ DashPannellum.defaultProps = {
     width: '600px',
     height: '400px',
     customControls: false,
-    showCenterDot: false
+    showCenterDot: false,
+    autoLoad: false
 };
 
 DashPannellum.propTypes = {
@@ -258,9 +264,9 @@ DashPannellum.propTypes = {
     setProps: PropTypes.func,
 
     /**
-     * Indicates whether the panorama has been loaded.
+     * If true, automatically loads the panorama without user interaction.
      */
-    loaded: PropTypes.bool,
+    autoLoad: PropTypes.bool,
 
     /**
      * The current pitch of the panorama view.

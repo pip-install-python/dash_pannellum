@@ -106,12 +106,16 @@
         "required": false,
         "description": "Dash-assigned callback that should be called to report property changes\nto Dash, to make them available for callbacks."
       },
-      "loaded": {
+      "autoLoad": {
         "type": {
           "name": "bool"
         },
         "required": false,
-        "description": "Indicates whether the panorama has been loaded."
+        "description": "If true, automatically loads the panorama without user interaction.",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
       },
       "pitch": {
         "type": {

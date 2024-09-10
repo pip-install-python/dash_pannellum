@@ -10,8 +10,8 @@ DashPannellum is a component for displaying panoramic images and videos. It supp
 }
 
 \usage{
-dashPannellum(id=NULL, currentScene=NULL, customControls=NULL,
-height=NULL, loaded=NULL, multiRes=NULL, pitch=NULL,
+dashPannellum(id=NULL, autoLoad=NULL, currentScene=NULL,
+customControls=NULL, height=NULL, multiRes=NULL, pitch=NULL,
 showCenterDot=NULL, tour=NULL, video=NULL, width=NULL,
 yaw=NULL)
 }
@@ -19,13 +19,13 @@ yaw=NULL)
 \arguments{
 \item{id}{Character. The ID used to identify this component in Dash callbacks.}
 
+\item{autoLoad}{Logical. If true, automatically loads the panorama without user interaction.}
+
 \item{currentScene}{Character. The ID of the current scene in tour mode.}
 
 \item{customControls}{Logical. If true, enables custom controls for the panorama viewer.}
 
 \item{height}{Character. The height of the panorama viewer.}
-
-\item{loaded}{Logical. Indicates whether the panorama has been loaded.}
 
 \item{multiRes}{Named list. Configuration object for multi-resolution panoramas.}
 
