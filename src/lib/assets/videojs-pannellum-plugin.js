@@ -60,13 +60,13 @@ export function initializePlugin() {
         });
 
         // Add methods to get pitch and yaw
-        player.pannellum = function(method) {
-            if (method === 'getPitch') {
-                return player.pnlmViewer.getPitch();
-            } else if (method === 'getYaw') {
-                return player.pnlmViewer.getYaw();
-            }
-        };
+        // player.pannellum = function(method) {
+        //     if (method === 'getPitch') {
+        //         return player.pnlmViewer.getPitch();
+        //     } else if (method === 'getYaw') {
+        //         return player.pnlmViewer.getYaw();
+        //     }
+        // };
     });
 }
 

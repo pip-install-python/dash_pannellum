@@ -1,7 +1,12 @@
 ## Dash Pannellum
 Dash Pannellum is a Dash component that integrates the Pannellum panorama viewer into your Dash applications. It allows you to display interactive 360° panoramas, including equirectangular images, cube maps, and 360° videos.
 
-Features:
+### Github Repo
+https://github.com/pip-install-python/dash_pannellum
+
+⭐️ Star this component on GitHub! Stay up to date on new releases and browse the codebase.
+
+### Features:
 - Display equirectangular panoramas
 - Support for multi-resolution panoramas
 - 360° video playback

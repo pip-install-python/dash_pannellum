@@ -117,6 +117,28 @@
           "computed": false
         }
       },
+      "compass": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "If true, displays a compass in the panorama viewer.",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
+      },
+      "northOffset": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "The offset, in degrees, of the center of the panorama from North.",
+        "defaultValue": {
+          "value": "0",
+          "computed": false
+        }
+      },
       "pitch": {
         "type": {
           "name": "number"

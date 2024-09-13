@@ -17,6 +17,8 @@ const DashPannellum = (props) => {
         customControls,
         showCenterDot,
         autoLoad,
+        compass,
+        northOffset,
         setProps
     } = props;
 
@@ -62,7 +64,7 @@ const DashPannellum = (props) => {
                 }
             }
         };
-    }, [tour, multiRes, video, autoLoad]);
+    }, [tour, multiRes, video, autoLoad,  compass, northOffset]);
 
     const loadScript = (src) => {
         return new Promise((resolve, reject) => {
@@ -100,7 +102,11 @@ const DashPannellum = (props) => {
 
                 // Initialize Pannellum with the video.js pannellum plugin
                 playerRef.current.on('loadedmetadata', () => {
-                    playerRef.current.pannellum({ autoLoad: autoLoad });
+                    playerRef.current.pannellum({
+                        autoLoad: autoLoad,
+                        compass: compass,
+                        northOffset: northOffset
+                    });
 
                     if (setProps) {
                         setProps({ loaded: true });
@@ -126,12 +132,16 @@ const DashPannellum = (props) => {
                 config = {
                     type: "multires",
                     multiRes: multiRes,
-                    autoLoad: autoLoad
+                    autoLoad: autoLoad,
+                    compass: compass,
+                    northOffset: northOffset
                 };
             } else if (tour) {
                 config = {
                     ...tour,
-                    autoLoad: autoLoad
+                    autoLoad: autoLoad,
+                    compass: compass,
+                    northOffset: northOffset
                 };
             }
 
@@ -207,7 +217,9 @@ DashPannellum.defaultProps = {
     height: '400px',
     customControls: false,
     showCenterDot: false,
-    autoLoad: false
+    autoLoad: false,
+    compass: false,
+    northOffset: 0
 };
 
 DashPannellum.propTypes = {
@@ -267,6 +279,16 @@ DashPannellum.propTypes = {
      * If true, automatically loads the panorama without user interaction.
      */
     autoLoad: PropTypes.bool,
+
+    /**
+     * If true, displays a compass in the panorama viewer.
+     */
+    compass: PropTypes.bool,
+
+    /**
+     * The offset, in degrees, of the center of the panorama from North.
+     */
+    northOffset: PropTypes.number,
 
     /**
      * The current pitch of the panorama view.
