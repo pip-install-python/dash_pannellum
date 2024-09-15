@@ -1,9 +1,9 @@
 # AUTO GENERATED FILE - DO NOT EDIT
 
 #' @export
-dashPannellum <- function(id=NULL, autoLoad=NULL, compass=NULL, currentScene=NULL, customControls=NULL, height=NULL, multiRes=NULL, northOffset=NULL, pitch=NULL, showCenterDot=NULL, tour=NULL, video=NULL, width=NULL, yaw=NULL) {
+dashPannellum <- function(id=NULL, autoLoad=NULL, compass=NULL, currentScene=NULL, customControls=NULL, height=NULL, multiRes=NULL, northOffset=NULL, pitch=NULL, showCenterDot=NULL, tour=NULL, useHttpStreaming=NULL, video=NULL, width=NULL, yaw=NULL) {
     
-    props <- list(id=id, autoLoad=autoLoad, compass=compass, currentScene=currentScene, customControls=customControls, height=height, multiRes=multiRes, northOffset=northOffset, pitch=pitch, showCenterDot=showCenterDot, tour=tour, video=video, width=width, yaw=yaw)
+    props <- list(id=id, autoLoad=autoLoad, compass=compass, currentScene=currentScene, customControls=customControls, height=height, multiRes=multiRes, northOffset=northOffset, pitch=pitch, showCenterDot=showCenterDot, tour=tour, useHttpStreaming=useHttpStreaming, video=video, width=width, yaw=yaw)
     if (length(props) > 0) {
         props <- props[!vapply(props, is.null, logical(1))]
     }
@@ -11,7 +11,7 @@ dashPannellum <- function(id=NULL, autoLoad=NULL, compass=NULL, currentScene=NUL
         props = props,
         type = 'DashPannellum',
         namespace = 'dash_pannellum',
-        propNames = c('id', 'autoLoad', 'compass', 'currentScene', 'customControls', 'height', 'multiRes', 'northOffset', 'pitch', 'showCenterDot', 'tour', 'video', 'width', 'yaw'),
+        propNames = c('id', 'autoLoad', 'compass', 'currentScene', 'customControls', 'height', 'multiRes', 'northOffset', 'pitch', 'showCenterDot', 'tour', 'useHttpStreaming', 'video', 'width', 'yaw'),
         package = 'dashPannellum'
         )
 

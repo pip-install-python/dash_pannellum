@@ -6,14 +6,14 @@
 \title{DashPannellum component}
 
 \description{
-DashPannellum is a component for displaying panoramic images and videos. It supports various modes including tours, multi-resolution images, and 360° videos.
+
 }
 
 \usage{
 dashPannellum(id=NULL, autoLoad=NULL, compass=NULL, currentScene=NULL,
 customControls=NULL, height=NULL, multiRes=NULL,
 northOffset=NULL, pitch=NULL, showCenterDot=NULL, tour=NULL,
-video=NULL, width=NULL, yaw=NULL)
+useHttpStreaming=NULL, video=NULL, width=NULL, yaw=NULL)
 }
 
 \arguments{
@@ -38,6 +38,8 @@ video=NULL, width=NULL, yaw=NULL)
 \item{showCenterDot}{Logical. If true, displays a center dot in the panorama viewer.}
 
 \item{tour}{Named list. Configuration object for the tour mode.}
+
+\item{useHttpStreaming}{Logical. If true, enables HTTP streaming support for video.}
 
 \item{video}{Lists containing elements 'sources', 'poster'.
 those elements have the following types:

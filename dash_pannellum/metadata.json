@@ -1,6 +1,6 @@
 {
   "src/lib/components/DashPannellum.react.js": {
-    "description": "DashPannellum is a component for displaying panoramic images and videos.\nIt supports various modes including tours, multi-resolution images, and 360\u00b0 videos.",
+    "description": "",
     "displayName": "DashPannellum",
     "methods": [],
     "props": {
@@ -113,7 +113,7 @@
         "required": false,
         "description": "If true, automatically loads the panorama without user interaction.",
         "defaultValue": {
-          "value": "false",
+          "value": "true",
           "computed": false
         }
       },
@@ -159,6 +159,17 @@
         },
         "required": false,
         "description": "The ID of the current scene in tour mode."
+      },
+      "useHttpStreaming": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "If true, enables HTTP streaming support for video.",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
       }
     }
   }

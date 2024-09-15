@@ -2,7 +2,7 @@
 name = "DashPannellum"
 uuid = "1b08a953-4be3-4667-9a23-f6ed8e680d2d"
 authors = ["pip install python <pipinstallpython@gmail.com>"]
-version = "0.0.4"
+version = "0.0.6"
 
 [deps]
 Dash = "1b08a953-4be3-4667-9a23-3db579824955"

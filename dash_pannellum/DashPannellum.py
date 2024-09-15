@@ -5,15 +5,14 @@ from dash.development.base_component import Component, _explicitize_args
 
 class DashPannellum(Component):
     """A DashPannellum component.
-DashPannellum is a component for displaying panoramic images and videos.
-It supports various modes including tours, multi-resolution images, and 360° videos.
+
 
 Keyword arguments:
 
 - id (string; optional):
     The ID used to identify this component in Dash callbacks.
 
-- autoLoad (boolean; default False):
+- autoLoad (boolean; default True):
     If True, automatically loads the panorama without user
     interaction.
 
@@ -44,6 +43,9 @@ Keyword arguments:
 - tour (dict; optional):
     Configuration object for the tour mode.
 
+- useHttpStreaming (boolean; default False):
+    If True, enables HTTP streaming support for video.
+
 - video (dict; optional):
     Configuration object for video panoramas.
 
@@ -69,10 +71,10 @@ Keyword arguments:
     _namespace = 'dash_pannellum'
     _type = 'DashPannellum'
     @_explicitize_args
-    def __init__(self, id=Component.UNDEFINED, width=Component.UNDEFINED, height=Component.UNDEFINED, tour=Component.UNDEFINED, multiRes=Component.UNDEFINED, video=Component.UNDEFINED, customControls=Component.UNDEFINED, showCenterDot=Component.UNDEFINED, autoLoad=Component.UNDEFINED, compass=Component.UNDEFINED, northOffset=Component.UNDEFINED, pitch=Component.UNDEFINED, yaw=Component.UNDEFINED, currentScene=Component.UNDEFINED, **kwargs):
-        self._prop_names = ['id', 'autoLoad', 'compass', 'currentScene', 'customControls', 'height', 'multiRes', 'northOffset', 'pitch', 'showCenterDot', 'tour', 'video', 'width', 'yaw']
+    def __init__(self, id=Component.UNDEFINED, width=Component.UNDEFINED, height=Component.UNDEFINED, tour=Component.UNDEFINED, multiRes=Component.UNDEFINED, video=Component.UNDEFINED, customControls=Component.UNDEFINED, showCenterDot=Component.UNDEFINED, autoLoad=Component.UNDEFINED, compass=Component.UNDEFINED, northOffset=Component.UNDEFINED, pitch=Component.UNDEFINED, yaw=Component.UNDEFINED, currentScene=Component.UNDEFINED, useHttpStreaming=Component.UNDEFINED, **kwargs):
+        self._prop_names = ['id', 'autoLoad', 'compass', 'currentScene', 'customControls', 'height', 'multiRes', 'northOffset', 'pitch', 'showCenterDot', 'tour', 'useHttpStreaming', 'video', 'width', 'yaw']
         self._valid_wildcard_attributes =            []
-        self.available_properties = ['id', 'autoLoad', 'compass', 'currentScene', 'customControls', 'height', 'multiRes', 'northOffset', 'pitch', 'showCenterDot', 'tour', 'video', 'width', 'yaw']
+        self.available_properties = ['id', 'autoLoad', 'compass', 'currentScene', 'customControls', 'height', 'multiRes', 'northOffset', 'pitch', 'showCenterDot', 'tour', 'useHttpStreaming', 'video', 'width', 'yaw']
         self.available_wildcard_properties =            []
         _explicit_args = kwargs.pop('_explicit_args')
         _locals = locals()

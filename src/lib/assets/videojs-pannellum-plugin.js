@@ -5,12 +5,12 @@
  */
 
 export function initializePlugin() {
-    if (typeof videojs === 'undefined' || typeof pannellum === 'undefined') {
-        console.error('Video.js or Pannellum is not loaded');
-        return;
-    }
+    // if (typeof videojs === 'undefined' || typeof pannellum === 'undefined') {
+    //     console.error('Video.js or Pannellum is not loaded');
+    //     return;
+    // }
 
-    var registerPlugin = videojs.registerPlugin || videojs.plugin;
+    var registerPlugin = videojs?.registerPlugin;
     if (!registerPlugin) {
         console.error('Video.js plugin registration method not found');
         return;
@@ -71,10 +71,10 @@ export function initializePlugin() {
 }
 
 // Check if videojs is already available, if not, wait for it
-if (typeof window !== 'undefined') {
-    if (typeof videojs !== 'undefined' && typeof pannellum !== 'undefined') {
-        initializePlugin();
-    } else {
-        window.addEventListener('load', initializePlugin);
-    }
-}
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        if (typeof videojs !== 'undefined' && typeof pannellum !== 'undefined') {
+            initializePlugin();
+        }
+    }, 100); // Delay to ensure everything is loaded
+});

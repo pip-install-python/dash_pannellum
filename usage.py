@@ -109,44 +109,9 @@ app.layout = html.Div([
         compass=True,
         northOffset=90
     ),
-    html.Div(id='video-output'),
     dcc.Interval(id='interval-component', interval=100, n_intervals=0)
 ])
 
-
-@app.callback(
-    Output('tour-output', 'children'),
-    Input('tour-component', 'pitch'),
-    Input('tour-component', 'yaw'),
-    Input('tour-component', 'currentScene'),
-    Input('interval-component', 'n_intervals')
-)
-def update_tour_output(pitch, yaw, current_scene, n):
-    if pitch is not None and yaw is not None and current_scene is not None:
-        return f'Current Scene: {current_scene}, Camera Position - Pitch: {pitch:.2f}, Yaw: {yaw:.2f}'
-    return 'Loading tour...'
-
-@app.callback(
-    Output('multires-output', 'children'),
-    Input('multires-component', 'pitch'),
-    Input('multires-component', 'yaw'),
-    Input('interval-component', 'n_intervals')
-)
-def update_multires_output(pitch, yaw, n):
-    if pitch is not None and yaw is not None:
-        return f'Camera Position - Pitch: {pitch:.2f}, Yaw: {yaw:.2f}'
-    return 'Loading multiresolution panorama...'
-
-# @app.callback(
-#     Output('video-output', 'children'),
-#     Input('video-component', 'pitch'),
-#     Input('video-component', 'yaw'),
-#     Input('interval-component', 'n_intervals')
-# )
-# def update_video_output(pitch, yaw, n):
-#     if pitch is not None and yaw is not None:
-#         return f'Camera Position - Pitch: {pitch:.2f}, Yaw: {yaw:.2f}'
-#     return 'Camera Position - Pitch: 0.00, Yaw: 0.00'
 
 if __name__ == '__main__':
     app.run_server(debug=True, port='8051')
