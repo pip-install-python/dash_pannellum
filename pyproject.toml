@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dash-pannellum"
+version = "0.4.0"
+description = "Dash component wrapping Pannellum — equirectangular panoramas, multi-resolution tiles, virtual tours and 360° video for Plotly Dash."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "pip install python", email = "pipinstallpython@gmail.com" },
+]
+requires-python = ">=3.9"
+dependencies = ["dash>=4.2.0"]
+keywords = ["dash", "plotly", "pannellum", "panorama", "360", "virtual-tour"]
+classifiers = [
+    "Framework :: Dash",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Graphics :: Viewers",
+]
+
+[project.urls]
+Homepage = "https://github.com/pip-install-python/dash-pannellum"
+Documentation = "https://github.com/pip-install-python/dash-pannellum"
+Issues = "https://github.com/pip-install-python/dash-pannellum/issues"
+
+[project.optional-dependencies]
+docs = [
+    "dash-mantine-components>=2.7.0",
+    "dash-iconify>=0.1.2",
+    "python-frontmatter>=1.0.0",
+    "markdown2dash",
+    "pydantic>=2.3.0",
+    "python-dotenv>=1.0.0",
+]
+
+[tool.setuptools]
+packages = ["dash_pannellum"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+dash_pannellum = ["*.js", "*.js.map", "*.json"]

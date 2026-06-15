@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "8561:8561"
+    networks:
+      - monitoring_network
+
+networks:
+  monitoring_network:
+    driver: bridge

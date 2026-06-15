@@ -1,2 +1,33 @@
-# dash is required to call `build:py`
-dash[dev]>=2.0.0
+# ============================================================================
+# Dash Pannellum — docs site + component dev requirements
+# The component package itself only depends on dash>=4.2.0 (see pyproject.toml).
+# ============================================================================
+
+# Core Dash 4.x (pluggable backends, websocket callbacks)
+dash[fastapi]>=4.2.0
+flask>=3.0.0
+
+# UI stack for the documentation app
+dash-mantine-components>=2.7.0
+dash-iconify>=0.1.2
+dash-ag-grid
+dash-gauge>=0.0.2   # DashRCJoystick — drives the Joystick Arena example
+
+# The component under documentation — install editable while developing:
+#   pip install -e .
+# (published consumers just `pip install dash-pannellum`)
+
+# Documentation & utilities
+python-frontmatter>=1.0.0
+markdown2dash
+pydantic>=2.3.0
+python-dotenv>=1.0.0
+pandas
+requests
+
+# AI/LLM Integration & SEO — 2.0 is not on PyPI yet, vendored locally
+./vendor/dash_improve_my_llms-2.0.0.tar.gz
+
+# Production servers (gunicorn+uvicorn worker covers flask AND fastapi backends)
+gunicorn>=21.2.0
+uvicorn[standard]>=0.27.0

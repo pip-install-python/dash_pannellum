@@ -6,88 +6,37 @@ const packagejson = require('./package.json');
 const dashLibraryName = packagejson.name.replace(/-/g, '_');
 
 module.exports = (env, argv) => {
-
-    let mode;
-
-    const overrides = module.exports || {};
-
-    // if user specified mode flag take that value
-    if (argv && argv.mode) {
-        mode = argv.mode;
-    }
-
-    // else if configuration object is already set (module.exports) use that value
-    else if (overrides.mode) {
-        mode = overrides.mode;
-    }
-
-    // else take webpack default (production)
-    else {
-        mode = 'production';
-    }
-
-    let filename = (overrides.output || {}).filename;
-    if(!filename) {
-        const modeSuffix = mode === 'development' ? 'dev' : 'min';
-        filename = `${dashLibraryName}.${modeSuffix}.js`;
-    }
-
-    const entry = overrides.entry || {main: './src/lib/index.js'};
-
-    const devtool = overrides.devtool || 'source-map';
-
-    const externals = ('externals' in overrides) ? overrides.externals : ({
-        react: 'React',
-        'react-dom': 'ReactDOM',
-        'plotly.js': 'Plotly',
-        'prop-types': 'PropTypes',
-    });
+    const mode = (argv && argv.mode) || 'production';
+    const modeSuffix = mode === 'development' ? 'dev' : 'min';
 
     return {
         mode,
-        entry,
+        entry: {main: './src/lib/index.js'},
         output: {
             path: path.resolve(__dirname, dashLibraryName),
             chunkFilename: '[name].js',
-            filename,
+            filename: `${dashLibraryName}.${modeSuffix}.js`,
             library: dashLibraryName,
             libraryTarget: 'window',
         },
-        devtool,
-        devServer: {
-            static: {
-                directory: path.join(__dirname, '/')
-            }
+        // Source maps are emitted by SourceMapDevToolPlugin below; setting
+        // devtool here as well would emit a second, conflicting map file.
+        devtool: false,
+        externals: {
+            react: 'React',
+            'react-dom': 'ReactDOM',
+            'prop-types': 'PropTypes',
         },
-        externals,
         module: {
             rules: [
                 {
                     test: /\.jsx?$/,
                     exclude: /node_modules/,
-                    use: {
-                        loader: 'babel-loader',
-                    },
+                    use: {loader: 'babel-loader'},
                 },
                 {
                     test: /\.css$/,
-                    use: [
-                        {
-                            loader: 'style-loader',
-                        },
-                        {
-                            loader: 'css-loader',
-                        },
-                    ],
-                },
-                {
-                    test: /assets\/.*\.js$/,
-                    type: 'javascript/auto',
-                    use: [
-                        {
-                            loader: 'babel-loader',
-                        },
-                    ],
+                    use: ['style-loader', 'css-loader'],
                 },
             ],
         },
@@ -100,23 +49,22 @@ module.exports = (env, argv) => {
                         minSize: 0,
                         name(module, chunks, cacheGroupKey) {
                             return `${cacheGroupKey}-${chunks[0].name}`;
-                        }
+                        },
                     },
                     shared: {
                         chunks: 'all',
                         minSize: 0,
                         minChunks: 2,
-                        name: 'dash_pannellum-shared'
-                    }
-                }
-            }
+                        name: `${dashLibraryName}-shared`,
+                    },
+                },
+            },
         },
         plugins: [
             new WebpackDashDynamicImport(),
             new webpack.SourceMapDevToolPlugin({
                 filename: '[file].map',
-                exclude: ['async-plotlyjs']
-            })
-        ]
-    }
+            }),
+        ],
+    };
 };

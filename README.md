@@ -1,216 +1,149 @@
-## Dash Pannellum
-Dash Pannellum is a Dash component that integrates the Pannellum panorama viewer into your Dash applications. It allows you to display interactive 360° panoramas, including equirectangular images, cube maps, and 360° videos.
+# Dash Pannellum
 
-### Github Repo
-https://github.com/pip-install-python/dash_pannellum
+> Interactive 360° panoramas, virtual tours, multi-resolution tiles and 360° video for [Plotly Dash](https://dash.plotly.com/) — built on the plug-in-free [Pannellum](https://pannellum.org/) WebGL viewer.
 
-⭐️ Star this component on GitHub! Stay up to date on new releases and browse the codebase.
+This repository is two things at once:
 
-### Features:
-- Display equirectangular panoramas
-- Support for multi-resolution panoramas
-- 360° video playback
-- Tour mode with multiple scenes and hotspots
-- Customizable controls
-- Center dot option for orientation
-- pinpoint location of where the user is within the component
-- autoload feature
-- adjustable props
-- supports keyboard controls [left arrow] [right arrow] [up arrow] [down arrow] to move, [shift] zoom in and [control] to zoom out
+1. **The component package** — `dash_pannellum`, a Dash component library published to PyPI.
+2. **Its documentation site** — a markdown-driven Dash app (`run.py`) built on Dash Mantine Components, where every example is live. The site doubles as the component's test bed.
 
-### Installation
-`pip install dash-pannellum`
+Dash Pannellum 0.1.0 is the modernized revival of the original 0.0.6 component: **Dash 4.2+**, React 18 build, `pyproject.toml` packaging, and a documentation app on the [dash-documentation-boilerplate](https://github.com/pip-install-python/Dash-Documentation-Boilerplate) architecture with first-class AI/LLM + SEO integration.
 
-### Interactive Docs
-[View the interactive docs](https://pip-install-python.com/pip/dash_pannellum)
+---
 
-### Usage
-Here's a simple example of how to use the DashPannellum component:
-    
+## Install the component
+
+```bash
+pip install dash-pannellum
+```
+
 ```python
 import dash
 from dash import html
-import dash_pannellum
+from dash_pannellum import DashPannellum
 
 app = dash.Dash(__name__)
 
-app.layout = html.Div([
-    dash_pannellum.DashPannellum(
-        id='panorama',
+app.layout = html.Div(
+    DashPannellum(
+        id="panorama",
         tour={
-            "default": {
-                "firstScene": "scene1",
-                "sceneFadeDuration": 1000
-            },
+            "default": {"firstScene": "alma"},
             "scenes": {
-                "scene1": {
-                    "title": "Example Panorama",
-                    "hfov": 110,
-                    "pitch": -3,
-                    "yaw": 117,
+                "alma": {
                     "type": "equirectangular",
-                    "panorama": "https://pannellum.org/images/from-tree.jpg"
+                    "panorama": "https://pannellum.org/images/alma.jpg",
                 }
-            }
+            },
         },
-        width='100%',
-        height='400px',
+        autoLoad=True,
+        width="100%",
+        height="500px",
     )
-])
-
-if __name__ == '__main__':
-    app.run_server(debug=True)
-```
-### Component Properties
-
-- `id` (string): The ID used to identify this component in Dash callbacks.
-- `width` (string): The width of the panorama viewer.
-- `height` (string): The height of the panorama viewer.
-- `tour` (dict): Configuration object for the tour mode.
-- `multiRes` (dict): Configuration object for multi-resolution panoramas.
-- `video` (dict): Configuration object for video panoramas.
-- `customControls` (boolean): If true, enables custom controls for the panorama viewer.
-- `showCenterDot` (boolean): If true, displays a center dot in the panorama viewer.
-- `loaded` (boolean; read-only): Indicates whether the panorama has been loaded.
-- `pitch` (number; read-only): The current pitch of the panorama view.
-- `yaw` (number; read-only): The current yaw of the panorama view.
-- `currentScene` (string; read-only): The ID of the current scene in tour mode.
-
-## Examples
-___
-### Tour Mode
-```python
-tour_config = {
-    "default": {
-        "firstScene": "scene1",
-        "sceneFadeDuration": 1000
-    },
-    "scenes": {
-        "scene1": {
-            "title": "First Scene",
-            "hfov": 110,
-            "pitch": -3,
-            "yaw": 117,
-            "type": "equirectangular",
-            "panorama": "https://pannellum.org/images/from-tree.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -2.1,
-                    "yaw": 132.9,
-                    "type": "scene",
-                    "text": "Go to Second Scene",
-                    "sceneId": "scene2"
-                }
-            ]
-        },
-        "scene2": {
-            "title": "Second Scene",
-            "hfov": 110,
-            "yaw": 5,
-            "type": "equirectangular",
-            "panorama": "https://pannellum.org/images/bma-0.jpg",
-            "hotSpots": [
-                {
-                    "pitch": -0.6,
-                    "yaw": 37.1,
-                    "type": "scene",
-                    "text": "Go to First Scene",
-                    "sceneId": "scene1",
-                    "targetYaw": -23,
-                    "targetPitch": 2
-                }
-            ]
-        }
-    }
-}
-
-dash_pannellum.DashPannellum(
-    id='tour-component',
-    tour=tour_config,
-    width='100%',
-    height='400px',
 )
+
+if __name__ == "__main__":
+    app.run(debug=True)
 ```
-### Partial Panorama
-Partial panoramas can be displayed by specifying the extents of the equirectangular panorama using the haov, vaov, and vOffset parameters. These parameters define the horizontal angle of view, vertical angle of view, and vertical offset, respectively.
-```python
-partial_panorama_config = {
-    "type": "equirectangular",
-    "panorama": "https://pannellum.org/images/charles-street.jpg",
-    "haov": 149.87,
-    "vaov": 54.15,
-    "vOffset": 1.17
-}
 
-dash_pannellum.DashPannellum(
-    id='partial-panorama-component',
-    tour={"default": {"firstScene": "scene1"}, "scenes": {"scene1": partial_panorama_config}},
-    width='100%',
-    height='400px',
-)
+**Viewer modes** — pass exactly one of:
+
+| Prop | Mode |
+|------|------|
+| `tour` | Equirectangular panoramas & multi-scene virtual tours |
+| `multiRes` | Tiled multi-resolution (gigapixel) panoramas |
+| `video` | 360° video via video.js (optional HLS/DASH with `useHttpStreaming`) |
+
+**Callback surface** — `pitch`, `yaw`, `currentScene`, `loaded` and `lastClickedHotspot` update from the viewer; use them as `Input`s. `callbackHotspots` places clickable hotspots that report their `name` back to Dash.
+
+---
+
+## Run the documentation site
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt   # includes the vendored dash-improve-my-llms 2.0
+pip install -e .                  # the component itself, editable
+python run.py                     # http://127.0.0.1:8561
 ```
-In this example:
 
-- `haov`: 149.87 degrees - Specifies the horizontal angle of view.
-- `vaov`: 54.15 degrees - Specifies the vertical angle of view.
-- `vOffset`: 1.17 degrees - Specifies the vertical offset of the panorama.
+The backend is pluggable (Dash 4.1+). Select it in `.env` or the environment:
 
-These parameters allow you to display panoramas that don't cover a full 360° horizontally or 180° vertically. The vOffset parameter is particularly useful when the panorama is not centered vertically.
-### Multi-resolution Panorama
-```python
-multiRes_config = {
-    "basePath": "https://pannellum.org/images/multires/library",
-    "path": "/%l/%s%y_%x",
-    "fallbackPath": "/fallback/%s",
-    "extension": "jpg",
-    "tileResolution": 512,
-    "maxLevel": 6,
-    "cubeResolution": 8432
-}
-
-dash_pannellum.DashPannellum(
-    id='multires-component',
-    multiRes=multiRes_config,
-    width='100%',
-    height='400px',
-)
+```bash
+DASH_BACKEND=fastapi python run.py   # ASGI: websockets, Swagger UI at /docs
+DASH_BACKEND=flask   python run.py   # WSGI default
 ```
-### Video Panorama
-```python
-video_config = {
-    "sources": [
-        {"src": "https://bitmovin-a.akamaihd.net/content/playhouse-vr/progressive.mp4", "type": "video/mp4"},
-    ],
-    "poster": "https://bitmovin-a.akamaihd.net/content/playhouse-vr/poster.jpg"
-}
 
-dash_pannellum.DashPannellum(
-    id='video-component',
-    video=video_config,
-    width='100%',
-    height='400px',
-)
+Or with Docker: `docker compose up` (serves on port 8561).
+
+### Documentation pages
+
+| Page | What it shows |
+|------|---------------|
+| `/getting-started` | Install + first panorama |
+| `/components/tours` | Multi-scene tour, live pitch/yaw/scene callbacks |
+| `/components/video` | 360° video + HTTP streaming |
+| `/components/multires` | Tiled gigapixel panoramas |
+| `/components/hotspots` | Callback hotspots + coordinate-authoring workflow |
+| `/api` | Full prop reference, generated from component metadata |
+
+Each page also serves an LLM-ready version at `/<page>/llms.txt` (dash-improve-my-llms 2.0), and the site exposes `/llms.txt`, `/sitemap.xml` and `/robots.txt`.
+
+---
+
+## Develop the component
+
+The React source lives in `src/lib/`; the built artifacts and generated Python classes land in `dash_pannellum/`.
+
+```bash
+npm install                # toolchain (webpack 5, babel, react 18)
+source .venv/bin/activate  # dash-generate-components comes from the venv
+npm run build              # build:js (webpack) + build:backends (Python classes)
 ```
-### Callbacks
-You can use Dash callbacks to interact with the component. Here's an example that updates an output based on the panorama's current state:
-python
-```python
-from dash.dependencies import Input, Output
 
-@app.callback(
-    Output('output-div', 'children'),
-    Input('panorama', 'loaded'),
-    Input('panorama', 'pitch'),
-    Input('panorama', 'yaw'),
-    Input('panorama', 'currentScene')
-)
-def update_output(loaded, pitch, yaw, current_scene):
-    if loaded and pitch is not None and yaw is not None:
-        return f'Current Scene: {current_scene}, Pitch: {pitch:.2f}, Yaw: {yaw:.2f}'
-    return 'Loading panorama...'
+After a build, restart `run.py` — the docs site imports the package you just built, so it *is* the integration test. A browser-level check of the docs pages (viewer canvas renders, no console errors) is the quickest smoke test.
+
+### Repository layout
+
 ```
-### Contributing
-Contributions to dash-pannellum are welcome! Please refer to the project's issues on GitHub for any feature requests or bug reports.
+├── src/lib/                  # React component source
+│   ├── components/DashPannellum.react.js
+│   └── assets/videojs-pannellum-plugin.js
+├── dash_pannellum/           # generated Python package (committed)
+├── pyproject.toml            # package metadata (dash>=4.2.0)
+├── package.json              # JS build toolchain
+│
+├── run.py                    # documentation app entry point
+├── docs/                     # markdown docs + live examples (one folder per page)
+├── pages/                    # home + markdown loader + analytics
+├── components/               # appshell, header, navbar (dash-mantine-components)
+├── lib/                      # backend resolver, directives, analytics
+├── assets/ templates/        # css/js, index.html with SEO/LLM meta
+├── vendor/                   # dash-improve-my-llms 2.0 tarball (not yet on PyPI)
+└── legacy/                   # the original 0.0.6 repo, archived untouched
+```
 
-### License
-This project is licensed under the MIT License.
+### Publish
+
+```bash
+npm run build
+python -m build              # sdist + wheel from pyproject.toml
+twine upload dist/*
+```
+
+---
+
+## For AI assistants
+
+[SKILLS.md](SKILLS.md) is a skills guide to the package — modes, callback patterns, prop reference and gotchas — written for AI coding assistants (and humans in a hurry).
+
+## Changes since 0.0.6
+
+See [CHANGELOG.md](CHANGELOG.md). Highlights: Dash 4.2+ / React 18, coherent `customControls` semantics, throttled + change-detected view-state updates, callback hotspots wired through real Pannellum click handlers, deduplicated CDN script loading (multiple viewers per page), modern packaging.
+
+## Credits
+
+- [Pannellum](https://pannellum.org/) by Matthew Petroff — the underlying viewer (MIT)
+- [video.js](https://videojs.com/) — 360° video playback
+
+MIT licensed. Built by [pip-install-python](https://github.com/pip-install-python).
