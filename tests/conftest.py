@@ -239,10 +239,10 @@ def tmp_state_dir():
 def pages(app_module):
     """Every PUBLIC registered page as (path, name, entry), sorted by path.
 
-    Hidden pages (run.py's `mark_hidden`, e.g. /analytics/traffic) are
-    excluded: the package deliberately 404s their llms.txt, drops them from
-    the sitemap and blocks them in robots.txt, so every "each page must..."
-    sweep in this suite would fail on behaviour that is correct.
+    Hidden pages (dash-improve-my-llms `mark_hidden`; none registered today)
+    are excluded: the package deliberately 404s their llms.txt, drops them
+    from the sitemap and blocks them in robots.txt, so every "each page
+    must..." sweep in this suite would fail on behaviour that is correct.
     """
     import dash
     from dash_improve_my_llms import is_hidden

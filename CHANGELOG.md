@@ -64,6 +64,11 @@ tarball). `[project.urls]` pointed at a hyphenated repository name that
 does not exist; it now points at `dash_pannellum`, with Documentation at
 pannellum.2plot.dev.
 
+The local /analytics/traffic dashboard is gone: traffic accounting lives
+on the hub (the tracker and the hourly signed rollup to 2plot.ai are
+unchanged), so a per-satellite dashboard was a second, staler view of the
+same ledger.
+
 tests/conftest.py removes its per-run temp state dir at exit. `mkdtemp`
 falls back to the current directory when no system temp dir is writable
 (sandboxed runs with TMPDIR unset), which had leaked eleven

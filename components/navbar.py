@@ -8,7 +8,6 @@ excluded_links = [
     "/dash-iconify",
     "/migration",
     "/learning-resources",
-    "/analytics/traffic",  # Analytics pages have their own section
 ]
 
 
@@ -104,19 +103,6 @@ def create_content(data):
                 create_nav_section(
                     "Documentation",
                     page_links
-                ),
-
-                # Analytics Section
-                dmc.Divider(mt="md", mb="sm"),
-                create_nav_section(
-                    "Analytics",
-                    [
-                        create_nav_link(
-                            "fluent:data-bar-vertical-24-regular",
-                            "Traffic",
-                            "/analytics/traffic"
-                        ),
-                    ]
                 ),
 
                 # External Resources Section

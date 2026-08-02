@@ -60,7 +60,6 @@ from dash_improve_my_llms import (  # noqa: E402
     add_llms_routes,
     LLMSConfig,
     RobotsConfig,
-    mark_hidden,
     register_page_metadata,
 )
 
@@ -279,11 +278,6 @@ register_page_metadata(
     name=SITE_BRAND,
     description=SITE_DESCRIPTION,
 )
-
-# Internal pages — excluded from /sitemap.xml, blocked in /robots.txt,
-# skipped by the MCP bridge, and return 404 to crawler requests on the
-# page URL and on /<page>/llms.txt.
-mark_hidden("/analytics/traffic")
 
 # ============================================================================
 # FastAPI native routes (only when running on FastAPI): /healthz,

@@ -188,7 +188,7 @@ pytest
 │
 ├── run.py                    # documentation app entry point
 ├── docs/                     # markdown docs + live examples (one folder per page)
-├── pages/                    # home + markdown loader + analytics
+├── pages/                    # home + markdown loader
 ├── components/               # appshell, header, navbar (dash-mantine-components)
 ├── lib/                      # backend resolver, network wiring, analytics
 ├── assets/ templates/        # css/js, index.html with SEO/LLM meta
