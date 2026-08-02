@@ -149,3 +149,6 @@ visitor_analytics.json
 # satellite reporter flock lease (lib/satellite_reporter.py)
 .satellite_report.lease
 visitor_analytics.json.lock
+
+# Claude Code session dir (user-attached screenshots land here; PyCharm auto-stages new files)
+.claude/
