@@ -132,8 +132,16 @@ dmypy.json
 
 # Node
 node_modules/
-# Archived original 0.0.6 repository (has its own .git; kept local)
+# Local-only remnant of the archived 0.0.6 clone (never tracked; safe to rm -rf)
 legacy/
+
+# Test-run state dirs (tests/conftest.py mkdtemp; lands in the repo root when
+# no system temp dir is writable, e.g. sandboxed runs without TMPDIR)
+pannellum-tests-*/
+
+# PyCharm's uv integration writes this; the project is pip-managed
+# (requirements.txt + the --no-deps markdown2dash step a lockfile can't express)
+uv.lock
 
 # Visitor analytics data (regenerated at runtime)
 visitor_analytics.json

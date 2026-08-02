@@ -243,7 +243,11 @@ jobs:
       # working tree, the container only holds what the Dockerfile COPYs.
       - name: Boot the container and wait for /healthz
         run: |
-          docker run -d --name docs -p 8561:8561 dash-pannellum-docs:ci
+          # Production parity: render.yaml sets DASH_BACKEND=fastapi. Without
+          # the flag this boots the flask default and never exercises the
+          # uvicorn worker path — the exact WSGI-through-uvicorn failure class
+          # the Dockerfile CMD warns about would sail through green.
+          docker run -d --name docs -p 8561:8561 -e DASH_BACKEND=fastapi dash-pannellum-docs:ci
           for i in $(seq 1 60); do
             if curl -sf http://127.0.0.1:8561/healthz > /dev/null; then
               echo "healthy after ~$((i*2))s"

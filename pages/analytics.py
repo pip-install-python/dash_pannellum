@@ -8,11 +8,11 @@ import dash_mantine_components as dmc
 from dash import Input, Output, callback, html, register_page, dcc
 from datetime import datetime, timedelta
 import json
-from pathlib import Path
 from collections import Counter
 import dash_ag_grid as dag
 import plotly.graph_objects as go
 
+from lib.analytics_tracker import analytics_path
 from lib.constants import OG_IMAGE_URL, PAGE_TITLE_PREFIX
 
 # Register page. Hidden from crawlers/sitemap via mark_hidden in run.py, but
@@ -28,14 +28,18 @@ register_page(
     image_url=OG_IMAGE_URL,
 )
 
-# Path to analytics data
-ANALYTICS_FILE = Path(__file__).parent.parent / "visitor_analytics.json"
-
 
 def load_analytics():
-    """Load analytics data from JSON file."""
-    if ANALYTICS_FILE.exists():
-        with open(ANALYTICS_FILE, "r") as f:
+    """Load analytics data from JSON file.
+
+    The path comes from analytics_path() — the same TRAFFIC_ANALYTICS_FILE
+    resolution the tracker writes through. A hardcoded repo-root path here
+    reads an empty ledger forever on Render, where the tracker writes to the
+    provisioned disk (/var/data).
+    """
+    analytics_file = analytics_path()
+    if analytics_file.exists():
+        with open(analytics_file, "r") as f:
             data = json.load(f)
 
             # Clean up any _reload-hash or internal Dash paths from existing data

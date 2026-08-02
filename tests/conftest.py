@@ -28,8 +28,10 @@ this is belt-and-braces. Same pattern as 2plotai and pip-docs+.
 
 from __future__ import annotations
 
+import atexit
 import importlib.util
 import os
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -54,7 +56,11 @@ for _key in SECRET_ENV_KEYS:
 # Without this the suite appends its own hits to the checked-out
 # visitor_analytics.json, which then shows up in `git status` and, worse, in
 # the next hourly rollup a developer's local run happens to send.
+# mkdtemp falls back to the CURRENT DIRECTORY when no candidate temp dir is
+# writable (sandboxed runs with TMPDIR unset land here), so the dir must be
+# removed on exit or it accumulates in the repo root — one per test run.
 _TMP_STATE = tempfile.mkdtemp(prefix="pannellum-tests-")
+atexit.register(shutil.rmtree, _TMP_STATE, True)
 os.environ["TRAFFIC_ANALYTICS_FILE"] = os.path.join(_TMP_STATE, "visitor_analytics.json")
 # Behind Cloudflare in production; in tests an outbound ip-api.com lookup per
 # hit would make the suite depend on a third party being up.

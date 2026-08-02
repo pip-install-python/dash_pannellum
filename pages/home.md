@@ -6,6 +6,8 @@ dash-pannellum is a lightweight Dash component library that embeds the plug-in-f
 
 ---
 
+![dash-pannellum — interactive 360° panoramas in a Dash app](https://cdn.2plot.ai/github_assets/Screenshot%202026-06-18%20at%2011.28.52%E2%80%AFAM.png)
+
 ## Installation
 
 ```bash

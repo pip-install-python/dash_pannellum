@@ -22,9 +22,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pip-install-python/dash-pannellum"
-Documentation = "https://github.com/pip-install-python/dash-pannellum"
-Issues = "https://github.com/pip-install-python/dash-pannellum/issues"
+Homepage = "https://github.com/pip-install-python/dash_pannellum"
+Documentation = "https://pannellum.2plot.dev"
+Issues = "https://github.com/pip-install-python/dash_pannellum/issues"
 
 [project.optional-dependencies]
 docs = [

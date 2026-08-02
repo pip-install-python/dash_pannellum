@@ -3,7 +3,7 @@ name: Joystick Arena
 description: Drive a 360° petri-dish arena with DashRCJoystick — floor tilesets composed into data-URI panoramas, steered through the 0.2.0 imperative camera
 endpoint: /components/arena
 package: dash_pannellum
-icon: tabler:joystick
+icon: mdi:gamepad-variant
 ---
 
 .. llms_copy::Joystick Arena
@@ -65,7 +65,7 @@ tileset, clockwise** — so a `dash-leaflet2` minimap and this 360 view can
 share one heading.
 
 .. admonition::Why not hotspots for movement?
-    :icon: tabler:joystick
+    :icon: mdi:gamepad-variant
     :color: blue
 
     The tours pattern (scene-switch hotspots) is a *teleport* mechanic — great

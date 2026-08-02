@@ -15,9 +15,21 @@ from __future__ import annotations
 
 import dash
 
+from lib.satellite_reporter import app_key, reporting_enabled
+
 
 def health_payload(backend: str) -> dict:
-    return {"ok": True, "backend": backend, "dash_version": dash.__version__}
+    # `app` is the RESOLVED reporting key, not a constant: a mis-set
+    # SATELLITE_APP_KEY overwrites another app's analytics rows on the hub,
+    # and exposing the effective value here is how the fleet battery catches
+    # that (the flows deploy once reported as "email" — found via healthz).
+    return {
+        "ok": True,
+        "app": app_key(),
+        "backend": backend,
+        "dash_version": dash.__version__,
+        "reporting": reporting_enabled(),
+    }
 
 
 def register_health_route(app, backend: str) -> None:

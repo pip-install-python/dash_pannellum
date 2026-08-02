@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import xml.etree.ElementTree as ET
 from urllib.parse import urlparse
@@ -131,10 +132,19 @@ def test_exactly_one_canonical_tag_for_browsers(client):
 
 
 def test_healthz(client):
-    """The 2plot.ai hub probes this hourly on every backend."""
+    """The 2plot.ai hub probes this hourly on every backend.
+
+    `app` must be the resolved reporting key — a wrong SATELLITE_APP_KEY
+    overwrites another app's analytics rows on the hub, and this field is
+    how the fleet battery catches it. `reporting` must be False here: the
+    suite runs secretless, so the rollup thread has nothing to sign with.
+    """
     response = client.get("/healthz")
     assert response.ok
-    assert "ok" in response.text.lower()
+    body = json.loads(response.text)
+    assert body["ok"] is True
+    assert body["app"] == "pannellum"
+    assert body["reporting"] is False
 
 
 # ---------------------------------------------------------------------------

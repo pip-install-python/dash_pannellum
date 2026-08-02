@@ -185,6 +185,14 @@ def main() -> int:
                            (512, "android-chrome-512x512.png")]:
             render(size).save(f"assets/favicon/{name}")
             print(f"[icon] wrote assets/favicon/{name}")
+        # assets/favicon.ico bundles the same sub-64 renders the
+        # <link rel="icon" sizes=...> tags serve. Emitting it here is what
+        # keeps it from drifting from the PNG set — it once shipped a stale
+        # mark because nothing regenerated it alongside the PNGs.
+        i16, i32 = render(16), render(32)
+        i32.save("assets/favicon.ico", format="ICO",
+                 sizes=[(16, 16), (32, 32)], append_images=[i16])
+        print("[icon] wrote assets/favicon.ico (16x16 + 32x32)")
     return 0
 
 

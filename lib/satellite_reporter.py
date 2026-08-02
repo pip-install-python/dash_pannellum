@@ -77,16 +77,20 @@ def app_key() -> str:
     for ads must never silently re-key its analytics series off the directory.
     The convergence here is a convenience, not a contract to lean on.
 
-    Default is "boilerplate" (this template's own directory key). The
-    "dev" key belongs to 2plot.dev (the pip-docs+ deployment) — apps
-    cloned from this template MUST set SATELLITE_APP_KEY to their own
-    directory key or their reports overwrite each other's rows.
+    Default is "pannellum", this app's key in the hub's directory. A wrong
+    value here silently overwrites ANOTHER app's analytics rows on the hub
+    — /healthz exposes the resolved value so the fleet battery can catch it.
     """
     return os.getenv("SATELLITE_APP_KEY") or "pannellum"
 
 
 def _secret() -> str | None:
     return os.getenv("CROSS_APP_WEBHOOK_SECRET") or None
+
+
+def reporting_enabled() -> bool:
+    """Whether the hourly rollup can actually POST (the HMAC secret is set)."""
+    return _secret() is not None
 
 
 def _interval() -> int:

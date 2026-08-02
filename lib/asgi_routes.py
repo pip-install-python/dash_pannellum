@@ -51,8 +51,10 @@ class PageListResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     ok: bool = True
+    app: str
     backend: str
     dash_version: str
+    reporting: bool
 
 
 # ---------------------------------------------------------------------------
@@ -102,11 +104,12 @@ def build_health_router() -> APIRouter:
 
     @router.get("/healthz", response_model=HealthResponse, summary="Liveness probe")
     def healthz() -> HealthResponse:
-        return HealthResponse(
-            ok=True,
-            backend="fastapi",
-            dash_version=dash.__version__,
-        )
+        # Same payload as lib/health.py builds for Flask/Quart — one source,
+        # so the hub sweep and the fleet battery see identical fields on
+        # every backend.
+        from lib.health import health_payload
+
+        return HealthResponse(**health_payload("fastapi"))
 
     return router
 

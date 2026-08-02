@@ -54,6 +54,25 @@ past the request-smuggling CVEs (21.x → ≥ 23) by installing markdown2dash
 COPY list. render.yaml is authored for the first deploy (docker runtime,
 disk-backed analytics ledger, Clerk satellite env).
 
+### Housekeeping
+
+The README was rebuilt to the network standard (badges, docs links) and
+made truthful again: it now lists all ten documentation pages — the old
+table missed scenes, arena, emotes and gyro — and no longer claims a
+vendored dash-improve-my-llms 2.0 (vendor/ holds only the dash-clerk-auth
+tarball). `[project.urls]` pointed at a hyphenated repository name that
+does not exist; it now points at `dash_pannellum`, with Documentation at
+pannellum.2plot.dev.
+
+tests/conftest.py removes its per-run temp state dir at exit. `mkdtemp`
+falls back to the current directory when no system temp dir is writable
+(sandboxed runs with TMPDIR unset), which had leaked eleven
+`pannellum-tests-*` dirs into the repo root; the pattern is gitignored as
+a backstop. The local `legacy/` archive — an untracked 457 MB second
+clone of the original repo, whose history is already this repository's
+own history — was removed from the working tree, along with stale 0.4.0
+build artifacts and a 0.4.0-era forum-post draft.
+
 ## 0.4.0 — 2026-06-12
 
 Gyro look-around — the device *is* the camera.
