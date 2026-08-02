@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.4.1 — 2026-08-01
+
+pannellum.2plot.dev joins the 2plot network. The component itself is
+unchanged (packaging metadata modernized: SPDX license expression,
+setuptools>=77); everything below is the documentation site reaching the
+network standard proven on 2plot.ai, 2plot.dev, boilerplate, leaflet,
+email, flexlayout and llms.
+
+### The site now states one identity everywhere
+
+`dash-pannellum — 360° panoramas for Dash` is the brand on every surface —
+`<title>`, the /llms.txt H1, the llms viewer's chip, og:site_name, the
+webmanifest, the home page H1 and the README. The package name leads
+because it is the string that finds the thing on PyPI; "Pip Install
+Python" is the byline, in the description. Previously every surface said
+"Dash Pannellum", a name that matches no installable package.
+
+### AI/LLM + SEO surfaces rebuilt on dash-improve-my-llms ≥ 2.3.4
+
+The vendored 2.0.0 tarball is gone; the package installs from PyPI and
+run.py refuses to boot below the 2.3.4 floor. Every `register_page` now
+passes `image_url=` and `description=` — one page missing either makes
+Dash emit an *empty* og:image, which scrapers prefer over every correct
+tag. The social card lives on the CDN
+(`cdn.2plot.ai/github_assets/pannellum.2plot.dev.png`, 1200×630), not in
+assets/, so a cold container can never poison an unfurl cache.
+templates/index.html declares only what Dash does not emit. The cross-host
+network directory, the hub bulletin (NETWORK_BULLETIN_URL), and a real
+installable-app surface (favicon set + webmanifest) are wired.
+
+### The network's analytics contract
+
+Requests carrying the `2plot-internal` UA token are dropped at write time,
+before bot classification; every outbound call to another network host
+sends that token. The hourly signed traffic rollup POSTs to 2plot.ai when
+CROSS_APP_WEBHOOK_SECRET is set, under this app's one short id:
+`pannellum` (AD_APP_ID, SATELLITE_APP_KEY and the bulletin app_id all
+agree). /healthz answers `ok: true` on every backend — the exact field the
+fleet's batteries assert.
+
+### CI/CD is now a deploy gate
+
+ci.yml (pull requests only; cd.yml owns main): actionlint first, a
+secretless pytest suite across flask/fastapi × py3.11–3.13 × dash 4.4.0
+and pinned, then the real Docker image built, fingerprint-asserted from
+inside (dash ≥ 4.4, dimll ≥ 2.3.4, gunicorn ≥ 23), booted, and battered by
+the same script CD runs against production. cd.yml deploys via Render
+hook, waits for *sustained* health (120s settle + 5 consecutive 200s), and
+runs the battery plus smoke_live against the live domain. gunicorn moved
+past the request-smuggling CVEs (21.x → ≥ 23) by installing markdown2dash
+`--no-deps`; the Dockerfile gained `PYTHONUNBUFFERED=1` and an explicit
+COPY list. render.yaml is authored for the first deploy (docker runtime,
+disk-backed analytics ledger, Clerk satellite env).
+
 ## 0.4.0 — 2026-06-12
 
 Gyro look-around — the device *is* the camera.

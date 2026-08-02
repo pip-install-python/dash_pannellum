@@ -1,0 +1,21 @@
+{
+    "name": "dash-pannellum — 360° panoramas for Dash",
+    "short_name": "dash-pannellum",
+    "description": "Interactive 360° panoramas, virtual tours, multi-resolution tiles and 360° video for Plotly Dash — built on the plug-in-free Pannellum WebGL viewer.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#12B886",
+    "icons": [
+        {
+            "src": "/assets/favicon/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/assets/favicon/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

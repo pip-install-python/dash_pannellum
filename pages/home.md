@@ -1,8 +1,8 @@
-# Dash Pannellum
+# dash-pannellum — 360° panoramas for Dash
 
-> **Interactive 360° panoramas, virtual tours, multi-resolution tiles and 360° video for Plotly Dash — built on the [Pannellum](https://pannellum.org/) WebGL viewer.**
+> **`dash-pannellum` — interactive 360° panoramas, virtual tours, multi-resolution tiles and 360° video for Plotly Dash, built on the plug-in-free [Pannellum](https://pannellum.org/) WebGL viewer.** By [Pip Install Python](https://2plot.dev).
 
-Dash Pannellum is a lightweight Dash component library that embeds the plug-in-free Pannellum panorama viewer in your Dash apps. Every viewer mode reports its state (pitch, yaw, current scene, clicked hotspots) back to Dash, so your panoramas participate fully in the callback graph.
+dash-pannellum is a lightweight Dash component library that embeds the plug-in-free Pannellum panorama viewer in your Dash apps. Every viewer mode reports its state (pitch, yaw, current scene, clicked hotspots) back to Dash, so your panoramas participate fully in the callback graph.
 
 ---
 

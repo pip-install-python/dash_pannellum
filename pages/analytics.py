@@ -13,13 +13,19 @@ from collections import Counter
 import dash_ag_grid as dag
 import plotly.graph_objects as go
 
-# Register page
+from lib.constants import OG_IMAGE_URL, PAGE_TITLE_PREFIX
+
+# Register page. Hidden from crawlers/sitemap via mark_hidden in run.py, but
+# image_url= and description= stay explicit anyway: one register_page without
+# them and Dash emits an EMPTY og:image tag, which — being later in document
+# order — wins with scrapers over every correct tag on the page.
 register_page(
     __name__,
     path="/analytics/traffic",
     name="Traffic Analytics",
-    title="Traffic Analytics | Dash Pannellum",
-    description="Visitor analytics dashboard with device and bot tracking"
+    title=PAGE_TITLE_PREFIX + "Traffic Analytics",
+    description="Visitor analytics dashboard with device and bot tracking",
+    image_url=OG_IMAGE_URL,
 )
 
 # Path to analytics data
@@ -94,7 +100,7 @@ def get_visits_by_hour(visits):
             visit_time = datetime.fromisoformat(visit["timestamp"])
             if visit_time >= twenty_four_hours_ago:
                 recent_visits.append(visit)
-        except:
+        except Exception:
             continue
 
     # Group by hour
@@ -110,7 +116,7 @@ def get_visits_by_hour(visits):
             device_type = visit["device_type"]
             if hour_key in hourly_counts:
                 hourly_counts[hour_key][device_type] += 1
-        except:
+        except Exception:
             continue
 
     return hourly_counts
@@ -336,7 +342,7 @@ def create_bot_visits_table(bot_visits):
         try:
             dt = datetime.fromisoformat(timestamp)
             time_str = dt.strftime("%Y-%m-%d %H:%M:%S")
-        except:
+        except Exception:
             time_str = timestamp
 
         bot_type = visit.get('bot_type', 'unknown')

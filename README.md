@@ -1,13 +1,13 @@
-# Dash Pannellum
+# dash-pannellum — 360° panoramas for Dash
 
-> Interactive 360° panoramas, virtual tours, multi-resolution tiles and 360° video for [Plotly Dash](https://dash.plotly.com/) — built on the plug-in-free [Pannellum](https://pannellum.org/) WebGL viewer.
+> Interactive 360° panoramas, virtual tours, multi-resolution tiles and 360° video for [Plotly Dash](https://dash.plotly.com/) — built on the plug-in-free [Pannellum](https://pannellum.org/) WebGL viewer. By [Pip Install Python](https://2plot.dev).
 
 This repository is two things at once:
 
 1. **The component package** — `dash_pannellum`, a Dash component library published to PyPI.
-2. **Its documentation site** — a markdown-driven Dash app (`run.py`) built on Dash Mantine Components, where every example is live. The site doubles as the component's test bed.
+2. **Its documentation site** — a markdown-driven Dash app (`run.py`) built on Dash Mantine Components, where every example is live, deployed at [pannellum.2plot.dev](https://pannellum.2plot.dev) as a [2plot network](https://2plot.dev) satellite. The site doubles as the component's test bed.
 
-Dash Pannellum 0.1.0 is the modernized revival of the original 0.0.6 component: **Dash 4.2+**, React 18 build, `pyproject.toml` packaging, and a documentation app on the [dash-documentation-boilerplate](https://github.com/pip-install-python/Dash-Documentation-Boilerplate) architecture with first-class AI/LLM + SEO integration.
+dash-pannellum is the modernized revival of the original 0.0.6 component: **Dash 4.2+**, React 18 build, `pyproject.toml` packaging, and a documentation app on the [dash-documentation-boilerplate](https://github.com/pip-install-python/Dash-Documentation-Boilerplate) architecture with first-class AI/LLM + SEO integration.
 
 ---
 

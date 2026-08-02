@@ -1,9 +1,7 @@
 import importlib
 import inspect
 from markdown2dash.src.directives.kwargs import Kwargs as KwargsBase
-from markdown2dash.src.utils import (
-    convert_docstring_to_dict as convert_dash_docstring_to_dict,
-)
+
 
 def convert_docstring_to_dict(docstring):
     """Convert numpy style parameter docstring to a list of dicts with keys name, type, description"""
@@ -23,6 +21,7 @@ def convert_docstring_to_dict(docstring):
     params.append(new_param)
 
     return params
+
 
 class Kwargs(KwargsBase):
 
@@ -61,16 +60,13 @@ class Kwargs(KwargsBase):
                 component = getattr(imported, component_name)
                 docstring = inspect.getdoc(component)
 
-                if docstring and "Keyword arguments:" in docstring:
-                    # Dash-generated component classes (dash_pannellum, dmc, …)
-                    docstring = docstring.split("Keyword arguments:")[-1]
-                    attrs["kwargs"] = convert_dash_docstring_to_dict(docstring)
-                elif docstring and "----------" in docstring:
+                if docstring and "----------" in docstring:
                     docstring = docstring.split("----------\n")[-1]
                     attrs["kwargs"] = convert_docstring_to_dict(docstring)
                 else:
                     # If no proper docstring, use component's __init__ signature
                     attrs["kwargs"] = []
-            except (ModuleNotFoundError, AttributeError, Exception) as e:
-                # If import fails, just skip kwargs generation
+            except Exception:
+                # Import failed or the component has no usable docstring;
+                # a props table is a nice-to-have, not worth failing a page for.
                 attrs["kwargs"] = []

@@ -6,11 +6,15 @@ from typing import List, Optional
 import dash
 import dash_mantine_components as dmc
 import frontmatter
+from dash import html
 from dash_improve_my_llms import register_page_metadata
 from markdown2dash import Admonition, BlockExec, Divider, Image, create_parser
 from pydantic import BaseModel
 
-from lib.constants import PAGE_TITLE_PREFIX, NAME_CONTENT_MAP
+from lib.ad_client import inject_ad_into_aside
+from lib.constants import OG_IMAGE_URL, PAGE_TITLE_PREFIX, NAME_CONTENT_MAP
+from lib import page_tiers
+from lib.directives.headings import patch_renderer
 from lib.directives.kwargs import Kwargs
 from lib.directives.llms_copy import LlmsCopy
 from lib.directives.source import SC
@@ -32,6 +36,10 @@ class Meta(BaseModel):
     package: str = "dash_pydantic_form"
     category: Optional[str] = None
     icon: Optional[str] = None
+    # Who may read this page: public | auth | admin | hidden. Absent means
+    # public — see lib/page_tiers.py for the tier model and why the default
+    # is open. Enforced only when access control is wired in run.py.
+    tier: Optional[str] = None
 
 
 _SOURCE_DIRECTIVE = re.compile(r'^\.\. source::(.+?)$', re.MULTILINE)
@@ -88,6 +96,11 @@ def _build_llms_doc(name: str, description: str, expanded_markdown: str, path: s
     return "\n".join(parts)
 
 
+# Headings containing inline code/emphasis crash markdown2dash's renderer and,
+# when they don't, get an id their own TOC anchor doesn't match. Must run
+# before create_parser() instantiates the renderer. See lib/directives/headings.
+patch_renderer()
+
 directives = [Admonition(), BlockExec(), Divider(), Image(), Kwargs(), LlmsCopy(), SC(), TOC()]
 parse = create_parser(directives)
 
@@ -108,6 +121,24 @@ for file in files:
     ]
     layout = section + layout
 
+    # 2plot.dev ad network: append the ad slot below the TOC links inside
+    # the page's aside (pages without `.. toc::` simply get no ad).
+    inject_ad_into_aside(layout, metadata.endpoint)
+
+    # Wrap the whole page in ONE container with a page-unique id. dash-renderer
+    # keys React children by component id, and markdown2dash gives every heading
+    # an id derived from its text ("usage", "introduction", ...) so TOC anchors
+    # work. Those ids repeat within and across pages, so when fast navigation
+    # swaps _pages_content.children between two flat layout lists, React
+    # reconciles by colliding keys and splices stale headings from the previous
+    # page into the new one (TOC-only ghost page until you scroll). A single
+    # keyed wrapper per page makes every swap old-node -> new-node: atomic
+    # unmount/mount, no cross-page key matching. Do not flatten this back into
+    # a list.
+    layout = html.Div(
+        layout, id="m2d-page" + metadata.endpoint.replace("/", "-")
+    )
+
     # register with dash
     dash.register_page(
         metadata.name,
@@ -118,11 +149,19 @@ for file in files:
         layout=layout,
         category=metadata.category,
         icon=metadata.icon,
+        # Without this Dash infers an image from assets/ and finds `logo.svg` —
+        # an SVG, which every social scraper rejects — then emits it ALONGSIDE
+        # the og:image in templates/index.html. See lib.constants.OG_IMAGE_URL.
+        image_url=OG_IMAGE_URL,
     )
 
     # Feed the expanded markdown into dash-improve-my-llms so /<page>/llms.txt
     # serves the directive-expanded prose. This replaces the custom Flask
     # route that used to live in run.py and works across all three backends.
+    # Record the declared tier before the prose is registered, so a gate can
+    # never be applied later than the content it is meant to gate.
+    page_tiers.register(metadata.endpoint, metadata.tier)
+
     expanded = _expand_source_directives(content)
     register_page_metadata(
         path=metadata.endpoint,

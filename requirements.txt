@@ -1,10 +1,15 @@
 # ============================================================================
-# Dash Pannellum — docs site + component dev requirements
-# The component package itself only depends on dash>=4.2.0 (see pyproject.toml).
+# dash-pannellum — docs site + component dev requirements
+# The component package itself only depends on dash>=4.2.0 (see
+# pyproject.toml); everything below serves the documentation app.
 # ============================================================================
 
-# Core Dash 4.x (pluggable backends, websocket callbacks)
-dash[fastapi]>=4.2.0
+# Core Dash 4.x. This site runs the FastAPI backend in production
+# (DASH_BACKEND=fastapi), so the floor is 4.4: 4.3.0's ASGI middleware
+# returns before setting the request context and every non-root URL 500s
+# ("No active request in context") — fixed upstream in 4.4.0. run.py
+# enforces this floor at boot, fatally on FastAPI.
+dash[fastapi]>=4.4.0
 flask>=3.0.0
 
 # UI stack for the documentation app
@@ -19,15 +24,46 @@ dash-gauge>=0.0.2   # DashRCJoystick — drives the Joystick Arena example
 
 # Documentation & utilities
 python-frontmatter>=1.0.0
-markdown2dash
 pydantic>=2.3.0
 python-dotenv>=1.0.0
 pandas
-requests
+requests>=2.27.1              # 2plot.dev ad-network client (lib/ad_client.py)
 
-# AI/LLM Integration & SEO — 2.0 is not on PyPI yet, vendored locally
-./vendor/dash_improve_my_llms-2.0.0.tar.gz
+# markdown2dash 0.1.2 declares `gunicorn>=21.2.0,<22.0.0` — a markdown parser
+# pinning a WSGI server, and directly against the CVE-driven gunicorn>=23
+# floor below (CVE-2024-6827, CVE-2024-1135 — request smuggling). pip cannot
+# resolve both, so markdown2dash is NOT listed here; it is installed on its
+# own line, without its dependency graph:
+#
+#     pip install -r requirements.txt
+#     pip install --no-deps markdown2dash==0.1.2
+#
+# The Dockerfile and .github/workflows/ci.yml both do exactly that pair, and
+# CI asserts the resulting gunicorn version INSIDE the built image — which is
+# what keeps the dodge honest. markdown2dash's real runtime dependencies
+# (dash, dash-iconify, dash-mantine-components, pydantic) are all pinned
+# above; the only one that is not is mistune, listed here so nothing quietly
+# relies on --no-deps having installed it:
+mistune>=3.0.0
+# markdown2dash==0.1.2        <- installed --no-deps, see above
 
-# Production servers (gunicorn+uvicorn worker covers flask AND fastapi backends)
-gunicorn>=21.2.0
+# AI/LLM Integration & SEO — from PyPI; the vendored 2.0.0 tarball is gone.
+# 2.3.4 is the network standard: below it `resolve_site_title` does not
+# exist, and this site's published identity (the /llms.txt H1, the llms
+# viewer's brand chip) silently degrades to `app.title`.
+# tests/test_site_identity.py asserts the installed version, and CI asserts
+# it again inside the image.
+dash-improve-my-llms[flask,fastapi]>=2.3.4
+
+# Clerk satellite auth for the HOSTED docs site only (lib/auth.py) — fully
+# dormant without the CLERK_* env keys. Not on PyPI, vendored like leaflet's.
+# 0.9.1 floor: 0.9.0 ships a dead avatar on satellite domains.
+./vendor/dash_clerk_auth-0.9.1.tar.gz
+clerk-backend-api>=5.0.0,<6
+
+# Production servers (gunicorn + uvicorn worker covers flask AND fastapi
+# backends). gunicorn fronts every deployment in this network, so the floor
+# is the network's security baseline: 21.x carried two HTTP
+# request-smuggling CVEs (CVE-2024-6827, CVE-2024-1135), both fixed in 23.0.
+gunicorn>=23.0.0
 uvicorn[standard]>=0.27.0

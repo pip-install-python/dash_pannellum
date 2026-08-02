@@ -137,3 +137,7 @@ legacy/
 
 # Visitor analytics data (regenerated at runtime)
 visitor_analytics.json
+
+# satellite reporter flock lease (lib/satellite_reporter.py)
+.satellite_report.lease
+visitor_analytics.json.lock

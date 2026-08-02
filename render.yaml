@@ -1,0 +1,141 @@
+# Render Blueprint — dash-pannellum docs (single web service, docker runtime).
+# Auto-deploys on push to main. Serves the component documentation, fronted by
+# https://pannellum.2plot.dev.
+#
+# FIRST DEPLOY CHECKLIST:
+#   1. Create the Blueprint from this repo; fill every `sync: false` secret in
+#      the dashboard (values live in the local .env — NEVER committed).
+#   2. CROSS_APP_WEBHOOK_SECRET is the shared 2plot.ai network secret — set
+#      it to the same value every other satellite uses, or this app's traffic
+#      never reaches the /traffic hub (see lib/satellite_reporter.py).
+#   3. DNS: point `pannellum.2plot.dev` at this service with a CNAME to the
+#      Render hostname Render shows once the domain below is accepted. Until
+#      that resolves, the service is only reachable on *.onrender.com — and
+#      every canonical URL will already be advertising pannellum.2plot.dev,
+#      which is intentional (link equity consolidates onto the custom domain).
+#   4. Register the satellite with the network — each of these fails silently
+#      if missed:
+#        a. 2plot.ai env `PULSE_POLL_TARGETS` +=
+#           `pannellum=https://pannellum.2plot.dev/healthz`
+#        b. pip-docs+ `lib/network_directory.py` — promote the `pannellum`
+#           entry planned -> live, add to VERIFIED_APP_IDS
+#   5. NOTE: Render applies blueprint envVars on a BLUEPRINT SYNC, not on an
+#      autoDeploy from a git push. Values listed here must ALSO exist on the
+#      service (dashboard) — email.2plot.dev shipped wired bulletin code and
+#      an unwired deployment exactly this way.
+services:
+  - type: web
+    name: dash-pannellum-docs
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeploy: true
+    # Render provisions the certificate once the CNAME resolves. The
+    # *.onrender.com hostname keeps working and is NOT the canonical origin —
+    # every page advertises pannellum.2plot.dev, so hits on the Render
+    # hostname consolidate onto the custom domain rather than competing.
+    domains:
+      - pannellum.2plot.dev
+    envVars:
+      # Drives every absolute URL the app emits: <link rel="canonical">,
+      # og:url, sitemap.xml, robots.txt and the llms.txt links. Matches
+      # DEFAULT_BASE_URL in lib/constants.py — set explicitly so a preview
+      # environment can override it without editing code.
+      - key: APP_BASE_URL
+        value: https://pannellum.2plot.dev
+
+      # fastapi is this site's production backend (the Dockerfile CMD runs
+      # the uvicorn worker class, which serves flask too if this is flipped).
+      - key: DASH_BACKEND
+        value: fastapi
+
+      - key: WEB_WORKERS
+        value: "1"
+
+      # Dash 4.3+ MCP server. Off by default: it is a live introspection
+      # surface on a public host.
+      - key: DASH_MCP_ENABLED
+        value: "0"
+
+      # --- 2plot.dev ad network (lib/ad_client.py) ---------------------
+      # Without AD_SERVER_URL reachable the slot simply stays hidden, and a
+      # 60s circuit breaker stops retrying, so an outage never slows a page.
+      - key: AD_SERVER_URL
+        value: https://2plot.dev
+      # This app's ONE short id on every hub surface — the directory key,
+      # NOT the package name. Same value as SATELLITE_APP_KEY below, so
+      # /admin/ad-analytics, /traffic and the bulletin all name this app
+      # identically.
+      - key: AD_APP_ID
+        value: pannellum
+
+      # --- 2plot.ai satellite analytics (lib/satellite_reporter.py) ----
+      # The shared HMAC secret every satellite holds. Set it in the Render
+      # dashboard (same value as on 2plot.ai) — never in this file.
+      # Without it the app still serves /healthz but reports nothing.
+      - key: CROSS_APP_WEBHOOK_SECRET
+        sync: false
+      - key: SATELLITE_APP_KEY
+        value: pannellum
+
+      # --- 2plot.dev network bulletin (lib/bulletin.py) -----------------
+      # The hub's announcement feed, rendered in the header of this site's
+      # llms.txt viewer. Opt-in — unset means the feature is simply off, and
+      # the boot log line "network bulletin: ..." says which state this is.
+      - key: NETWORK_BULLETIN_URL
+        value: https://2plot.dev/api/network/bulletin
+
+      # Behind Cloudflare the country header is already present, so the
+      # ip-api.com lookup is redundant latency.
+      - key: ANALYTICS_GEO_LOOKUP
+        value: "0"
+
+      # The hub takes the LAST report for a given (app, date). On an
+      # ephemeral filesystem a mid-day deploy wipes the ledger and the next
+      # hourly report overwrites the day's real total with whatever accrued
+      # since the restart. The disk below is what stops that.
+      - key: TRAFFIC_ANALYTICS_FILE
+        value: /var/data/visitor_analytics.json
+
+      # --- Clerk satellite auth (lib/auth.py) --------------------------
+      # All OPTIONAL: with these absent the site runs fully public. Uses
+      # dash-clerk-auth 0.9.1 (vendored; 0.9.0 ships a dead avatar on
+      # satellite domains). Set the two keys to turn auth on.
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      # The 2plot.ai PRIMARY on its production Clerk instance — the Account
+      # Portal / Frontend API custom domains, not *.accounts.dev.
+      - key: CLERK_SIGN_IN_URL
+        value: https://accounts.2plot.ai/sign-in
+      - key: CLERK_SIGN_UP_URL
+        value: https://accounts.2plot.ai/sign-up
+      # REQUIRED in satellite mode. A production custom-domain instance
+      # cannot derive this from CLERK_SIGN_IN_URL.
+      - key: CLERK_FRONTEND_API
+        value: https://clerk.2plot.ai
+      # The REGISTERED SATELLITE DOMAIN — deliberately NOT the host this app
+      # is served on. clerk-js derives the Frontend API from this value as
+      # `clerk.<domain>`, and Clerk only issues those DNS records per
+      # registered satellite domain: `clerk.2plot.dev` exists;
+      # `clerk.pannellum.2plot.dev` is NXDOMAIN, because pannellum.2plot.dev
+      # is an ALLOWED SUBDOMAIN of the 2plot.dev satellite rather than a
+      # satellite of its own (same shape as leaflet.2plot.dev). Session
+      # cookies are scoped to .2plot.dev, so this host reads them as a
+      # subdomain — which is exactly what the allowlist enables.
+      - key: CLERK_SATELLITE_DOMAIN
+        value: 2plot.dev
+      - key: CLERK_IS_SATELLITE
+        value: "true"
+      # Signs the session + __dca_identity cookies. Without it dash-clerk-auth
+      # falls back to a PUBLIC dev default string.
+      - key: SESSION_SECRET
+        generateValue: true
+
+    disk:
+      name: analytics
+      mountPath: /var/data
+      sizeGB: 1
