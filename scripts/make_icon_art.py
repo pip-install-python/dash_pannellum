@@ -62,8 +62,45 @@ def _arrowhead(draw, box, deg, length, spread, fill, flip=False):
     draw.polygon([tip, left, right], fill=fill)
 
 
+def render_small(size: int, ss: int = 4) -> Image.Image:
+    """Sub-64px variant: the sphere alone, big, with a bold orbit ring.
+
+    The full composition (grid + arrow + wordmark) is unreadable at favicon
+    sizes — 16px gives every gridline a fraction of a pixel. What survives
+    shrinking is silhouette: a planet with a ring still reads at 16px.
+    """
+    S = size * ss
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([0, 0, S - 1, S - 1], radius=S // 5, fill=TEAL)
+
+    cx, cy = S * 0.5, S * 0.5
+    R = S * 0.30
+    stroke = max(ss, round(S * 0.055))
+
+    orx, ory = S * 0.44, S * 0.15
+    orbit_box = [cx - orx, cy - ory, cx + orx, cy + ory]
+    d.arc(orbit_box, start=192, end=348, fill=WHITE_GHOST, width=stroke)
+    d.ellipse([cx - R, cy - R, cx + R, cy + R],
+              fill=TEAL_DEEP, outline=WHITE, width=stroke)
+    # One equator line is all the "grid" that survives 16px.
+    d.arc([cx - R, cy - R * 0.4, cx + R, cy + R * 0.4],
+          start=10, end=170, fill=WHITE, width=max(ss, round(S * 0.04)))
+    d.arc(orbit_box, start=22, end=158, fill=WHITE, width=stroke)
+    _arrowhead(d, orbit_box, 20, length=S * 0.11, spread=0.52, fill=WHITE)
+
+    return img.resize((size, size), Image.LANCZOS)
+
+
 def render(size: int, tile: bool = True, ss: int = 4) -> Image.Image:
-    """The artwork at `size` px. `tile=False` drops the rounded square."""
+    """The artwork at `size` px. `tile=False` drops the rounded square.
+
+    Below 64px the full composition cannot resolve; the simplified
+    sphere-only variant is substituted automatically.
+    """
+    if size < 64:
+        return render_small(size, ss)
+
     S = size * ss
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
