@@ -203,7 +203,7 @@ def main() -> int:
     default_domain = BASE_URL.split("://", 1)[-1].rstrip("/")
 
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--artwork", default="assets/favicon/android-chrome-512x512.png",
+    ap.add_argument("--artwork", default="assets/icon-art.png",
                     help="source image, transparent PNG (default: %(default)s)")
     ap.add_argument("--brand", default=SITE_BRAND.split(" — ")[0],
                     help="headline (default: the brand, minus its tagline)")
