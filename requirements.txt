@@ -60,6 +60,12 @@ dash-improve-my-llms[flask,fastapi]>=2.3.4
 # 0.9.1 floor: 0.9.0 ships a dead avatar on satellite domains.
 ./vendor/dash_clerk_auth-0.9.1.tar.gz
 clerk-backend-api>=5.0.0,<6
+# KNOWN, UNFIXABLE-HERE ADVISORY: the resolved cryptography (46.x) wheel
+# bundles the OpenSSL flagged by GHSA-537c-gmf6-5ccf; the fixed 48.0.1 is
+# unreachable while clerk-backend-api 5.x pins cryptography<47. The exit is
+# clerk-backend-api>=6 (allows <49), which needs dash-clerk-auth>0.9.1 to
+# relax its own <6 pin. Until that tarball lands, ci.yml's pip-audit step
+# carries a matching --ignore-vuln — remove both together.
 
 # Production servers (gunicorn + uvicorn worker covers flask AND fastapi
 # backends). gunicorn fronts every deployment in this network, so the floor
