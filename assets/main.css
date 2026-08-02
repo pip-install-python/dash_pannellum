@@ -235,6 +235,18 @@ div .m_46b77525 {
 
 img[alt=logo] { width: 100%; }
 
+/* Markdown-rendered images (dcc.Markdown and markdown2dash emit bare <img>
+   tags) must never set the page width: unconstrained, a screenshot's natural
+   width overflows phone viewports and drags the whole page wide, squeezing
+   the text column. Scale to the container on every viewport — the same
+   behavior dmc.Image defaults to, done in CSS because the tag comes out of
+   markdown rather than the component tree. */
+[id^="m2d-page"] img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--mantine-radius-md);
+}
+
 /* Theme-aware code blocks */
 :root[data-mantine-color-scheme="light"] pre,
 :root[data-mantine-color-scheme="light"] code {
