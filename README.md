@@ -15,12 +15,12 @@ viewer — wrapped as a single Dash component with a real-time imperative API.
 [![PyPI](https://img.shields.io/pypi/v/dash-pannellum?color=1c7ed6)](https://pypi.org/project/dash-pannellum/)
 [![Python](https://img.shields.io/pypi/pyversions/dash-pannellum)](https://pypi.org/project/dash-pannellum/)
 [![Dash](https://img.shields.io/badge/dash-%E2%89%A54.2-119DFF)](https://dash.plotly.com/)
-[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/pip-install-python/dash_pannellum/blob/main/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-pannellum.2plot.dev-1c7ed6)](https://pannellum.2plot.dev)
 
 **[Documentation](https://pannellum.2plot.dev)** ·
 [PyPI](https://pypi.org/project/dash-pannellum/) ·
-[Changelog](./CHANGELOG.md) ·
+[Changelog](https://github.com/pip-install-python/dash_pannellum/blob/main/CHANGELOG.md) ·
 [Discord](https://discord.gg/WEnZR35mrK)
 
 </div>
@@ -128,7 +128,7 @@ live:
 
 Each page also serves an LLM-ready version at `/<page>/llms.txt` (its prose plus
 complete example source), and the site exposes `/llms.txt`, `/sitemap.xml` and
-`/robots.txt`. [SKILLS.md](SKILLS.md) is a skills guide to the package — modes,
+`/robots.txt`. [SKILLS.md](https://github.com/pip-install-python/dash_pannellum/blob/main/SKILLS.md) is a skills guide to the package — modes,
 callback patterns, prop reference and gotchas — written for AI coding assistants
 (and humans in a hurry).
 
@@ -214,7 +214,7 @@ dash-pannellum 0.1.0+ is the modernized revival of the original 0.0.6 component:
 Dash 4.2+ / React 18, coherent `customControls` semantics, throttled +
 change-detected view-state updates, callback hotspots wired through real Pannellum
 click handlers, deduplicated CDN script loading, `pyproject.toml` packaging. See
-[CHANGELOG.md](./CHANGELOG.md) for the full history, including everything the
+[CHANGELOG.md](https://github.com/pip-install-python/dash_pannellum/blob/main/CHANGELOG.md) for the full history, including everything the
 real-time releases (0.2.0–0.4.0) added.
 
 ## Credits
@@ -225,4 +225,4 @@ real-time releases (0.2.0–0.4.0) added.
 
 ## License
 
-MIT — see [LICENSE](./LICENSE). Built by [Pip Install Python](https://github.com/pip-install-python).
+MIT — see [LICENSE](https://github.com/pip-install-python/dash_pannellum/blob/main/LICENSE). Built by [Pip Install Python](https://github.com/pip-install-python).

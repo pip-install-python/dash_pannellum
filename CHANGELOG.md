@@ -1,12 +1,18 @@
 # Changelog
 
-## 0.4.1 — 2026-08-01
+## 2.0.0 — 2026-08-02
+
+**The revival ships to PyPI** — the first published release since 0.0.6.
+Everything from 0.1.0 through 0.4.0 below lands in this version; the
+number leaps to 2.0.0 to mark the break: Dash 4.2+ / React 18 required,
+and the 0.x line belongs to the original Dash 1/2-era component.
 
 pannellum.2plot.dev joins the 2plot network. The component itself is
-unchanged (packaging metadata modernized: SPDX license expression,
-setuptools>=77); everything below is the documentation site reaching the
-network standard proven on 2plot.ai, 2plot.dev, boilerplate, leaflet,
-email, flexlayout and llms.
+unchanged since 0.4.0 (packaging metadata modernized: SPDX license
+expression, setuptools>=77); the rest of this entry is the documentation
+site reaching the network standard proven on 2plot.ai, 2plot.dev,
+boilerplate, leaflet, email, flexlayout and llms — deployed live at
+https://pannellum.2plot.dev on 2026-08-02.
 
 ### The site now states one identity everywhere
 

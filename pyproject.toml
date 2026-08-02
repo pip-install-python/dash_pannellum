@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dash-pannellum"
-version = "0.4.1"
+version = "2.0.0"
 description = "Dash component wrapping Pannellum — equirectangular panoramas, multi-resolution tiles, virtual tours and 360° video for Plotly Dash."
 readme = "README.md"
 license = "MIT"

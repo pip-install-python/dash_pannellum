@@ -1,6 +1,6 @@
 {
   "name": "dash_pannellum",
-  "version": "0.4.0",
+  "version": "2.0.0",
   "description": "Dash component wrapping Pannellum — equirectangular panoramas, multi-resolution tiles, virtual tours and 360° video for Plotly Dash.",
   "repository": {
     "type": "git",
