@@ -48,12 +48,16 @@ mistune>=3.0.0
 # markdown2dash==0.1.2        <- installed --no-deps, see above
 
 # AI/LLM Integration & SEO — from PyPI; the vendored 2.0.0 tarball is gone.
-# 2.3.4 is the network standard: below it `resolve_site_title` does not
-# exist, and this site's published identity (the /llms.txt H1, the llms
-# viewer's brand chip) silently degrades to `app.title`.
-# tests/test_site_identity.py asserts the installed version, and CI asserts
-# it again inside the image.
-dash-improve-my-llms[flask,fastapi]>=2.3.4
+# 2.5.1 is the Tier-B SEO standard: configure_seo (icons, social card,
+# publisher/sameAs), crawler <title> carrying the site name, per-page
+# title/image_url/schema_type reaching the crawler document, /favicon.ico
+# answered with a redirect instead of the app shell, and a prerender that
+# no longer clobbers the browser's per-page <title>. Below 2.3.4
+# `resolve_site_title` does not exist and this site's published identity
+# (the /llms.txt H1, the llms viewer's brand chip) silently degrades to
+# `app.title`. tests/test_site_identity.py asserts the installed version,
+# and CI asserts it again inside the image.
+dash-improve-my-llms[flask,fastapi]>=2.5.1
 
 # Clerk satellite auth for the HOSTED docs site only (lib/auth.py) — fully
 # dormant without the CLERK_* env keys. Not on PyPI, vendored like leaflet's.

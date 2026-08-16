@@ -19,6 +19,7 @@ from lib.directives.kwargs import Kwargs
 from lib.directives.llms_copy import LlmsCopy
 from lib.directives.source import SC
 from lib.directives.toc import TOC
+from lib.versions import substitute_versions
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -108,6 +109,13 @@ for file in files:
     logger.info("Loading %s..", file)
     metadata, content = frontmatter.parse(file.read_text())
     metadata = Meta(**metadata)
+
+    # Substitute BEFORE the content map: the rendered page, the copy-button
+    # markdown and the /<page>/llms.txt surface must all serve the same
+    # truth. A doc writes {{VERSION:<distribution>}} instead of a version
+    # number — any installed package, so this satellite documents its own
+    # component library the same way. See lib/versions.py for why.
+    content = substitute_versions(content, source=str(file))
 
     # Store raw markdown content in NAME_CONTENT_MAP for the LLM copy button.
     NAME_CONTENT_MAP[metadata.name] = content

@@ -5,6 +5,7 @@ import dash_mantine_components as dmc
 from dash import dcc, register_page
 
 from lib.constants import OG_IMAGE_URL, PAGE_TITLE_PREFIX, SITE_DESCRIPTION
+from lib.versions import substitute_versions
 
 register_page(
     __name__,
@@ -26,6 +27,13 @@ md_file = Path("pages") / "home.md"
 
 post = frontmatter.loads(md_file.read_text())
 metadata, content = post.metadata, post.content
+
+# Same {{VERSION:<distribution>}} substitution pages/markdown.py applies to
+# the docs: any version claim on the most-read surface in the network
+# (/llms.txt) must come from the installed package, never from prose — the
+# boilerplate shipped "Powered by 2.3.4" for months while a newer package
+# was actually serving the site.
+content = substitute_versions(content, source=str(md_file))
 
 # Module-level LLMS_DOC — dash-improve-my-llms 2.0 picks this up automatically
 # and serves it verbatim at /llms.txt. No layout walking, no extraction.

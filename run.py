@@ -372,6 +372,17 @@ print(
 # ============================================================================
 
 from lib import access as _access  # noqa: E402
+from lib import page_tiers as _page_tiers  # noqa: E402
+
+# Tiered corpus documents (dash-improve-my-llms >= 2.4.0). Pseudo-paths:
+# they never enter dash.page_registry, so they cannot leak into listings —
+# registering them here lets this satellite tier its compact briefing and
+# full corpus via env (LLMS_SMALL_TIER / LLMS_FULL_TIER; unset = the
+# default tier, i.e. public), and the hub can tighten either network-wide
+# through its page-tier ceilings with no redeploy here. Inert on older
+# package versions.
+_page_tiers.register("/llms-small.txt", os.environ.get("LLMS_SMALL_TIER"))
+_page_tiers.register("/llms-full.txt", os.environ.get("LLMS_FULL_TIER"))
 
 ACCESS_ENABLED = _access.configure()
 

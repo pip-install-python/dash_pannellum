@@ -22,7 +22,7 @@ Dash Pannellum targets **Dash 4.2+** and works on every Dash backend (Flask, Fas
     :icon: mdi:history
     :color: teal
 
-    Dash Pannellum 0.1.0 is the modernized revival of the original 0.0.6 component: rebuilt against Dash 4.x and React 18, documented with the live examples on this site, and repackaged with `pyproject.toml`.
+    Dash Pannellum {{VERSION:dash-pannellum}} is the modernized revival of the original 0.0.6 component: rebuilt against Dash 4.x and React 18, documented with the live examples on this site, and repackaged with `pyproject.toml`.
 
 ---
 
