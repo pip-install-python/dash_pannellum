@@ -289,15 +289,12 @@ jobs:
       - run: pip install pip-audit
       # Skip local vendor/ paths — pip-audit can only assess PyPI dists.
       #
-      # GHSA-537c-gmf6-5ccf (vulnerable OpenSSL in cryptography<48.0.1
-      # wheels) is ignored DELIBERATELY: clerk-backend-api 5.x pins
-      # cryptography<47, so no resolvable install can reach the fixed
-      # 48.0.1. The exit is clerk-backend-api>=6, gated on dash-clerk-auth
-      # relaxing its <6 pin in its next release. A permanently red advisory
-      # job trains everyone to ignore it — a documented suppression keeps
-      # this job loud for NEW advisories. Remove together with the
-      # requirements.txt note when the new dash-clerk-auth tarball lands.
+      # The GHSA-537c-gmf6-5ccf suppression that used to live here is GONE, on
+      # purpose. It was gated on "dash-clerk-auth relaxing its <6 pin in its
+      # next release" — 1.0.1 did exactly that (`clerk-backend-api<8`), so
+      # requirements.txt now pins clerk-backend-api>=7.0.0 and
+      # cryptography>=50.0.0, which reaches the fix instead of suppressing it.
+      # No advisory is ignored here any more; keep it that way.
       - run: |
           grep -v '^\./vendor/' requirements.txt > /tmp/req-pypi.txt
-          pip-audit -r /tmp/req-pypi.txt --skip-editable \
-            --ignore-vuln GHSA-537c-gmf6-5ccf
+          pip-audit -r /tmp/req-pypi.txt --skip-editable

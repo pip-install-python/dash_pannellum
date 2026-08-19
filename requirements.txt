@@ -61,15 +61,17 @@ dash-improve-my-llms[flask,fastapi]>=2.5.1
 
 # Clerk satellite auth for the HOSTED docs site only (lib/auth.py) — fully
 # dormant without the CLERK_* env keys. Not on PyPI, vendored like leaflet's.
-# 0.9.1 floor: 0.9.0 ships a dead avatar on satellite domains.
-./vendor/dash_clerk_auth-0.9.1.tar.gz
-clerk-backend-api>=5.0.0,<6
-# KNOWN, UNFIXABLE-HERE ADVISORY: the resolved cryptography (46.x) wheel
-# bundles the OpenSSL flagged by GHSA-537c-gmf6-5ccf; the fixed 48.0.1 is
-# unreachable while clerk-backend-api 5.x pins cryptography<47. The exit is
-# clerk-backend-api>=6 (allows <49), which needs dash-clerk-auth>0.9.1 to
-# relax its own <6 pin. Until that tarball lands, ci.yml's pip-audit step
-# carries a matching --ignore-vuln — remove both together.
+# 1.0.2 floor: 0.9.0 ships a dead avatar on satellite domains, and 1.0.2 fixes
+# a second avatar bug — the menu could paint signed-out over a valid session.
+./vendor/dash_clerk_auth-1.0.2.tar.gz
+# RESOLVED — this is the tarball the note below was waiting for. dash-clerk-auth
+# 1.0.1 relaxed its own `<6` pin to `<8`, so clerk-backend-api 7.0.0 (which
+# allows `cryptography<51.0.0`) is now reachable and the floor below clears all
+# four advisories: GHSA-537c-gmf6-5ccf (48.0.1), PYSEC-2026-3554 and
+# PYSEC-2026-3553 (49.0.0), PYSEC-2026-3552 (50.0.0). The matching
+# --ignore-vuln in ci.yml's pip-audit step is removed with it, as intended.
+clerk-backend-api>=7.0.0,<8
+cryptography>=50.0.0
 
 # Production servers (gunicorn + uvicorn worker covers flask AND fastapi
 # backends). gunicorn fronts every deployment in this network, so the floor
