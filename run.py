@@ -27,6 +27,20 @@ from dotenv import load_dotenv
 # no matter what the file says.
 load_dotenv()
 
+# This satellite's directory key, pinned before ANY module that resolves an
+# identity to the hub is imported.
+#
+# lib/satellite_reporter.py is a byte-copy of the boilerplate's (its shasum
+# against the template is a gate-wave acceptance check), and the template's
+# copy necessarily defaults to the template's own key, "boilerplate". The
+# other three hub-facing modules — lib/ad_client.py, lib/hub_client.py and
+# lib/bulletin.py — default to "pannellum". So with SATELLITE_APP_KEY unset
+# the four DISAGREE, and the reporter would file this host's traffic under
+# the template's row. render.yaml sets the variable in production; this line
+# is what makes the guarantee hold without it, and it is a `setdefault`, so
+# a deploy that sets the variable still wins.
+os.environ.setdefault("SATELLITE_APP_KEY", "pannellum")
+
 import dash  # noqa: E402
 from dash import Dash  # noqa: E402
 from components.appshell import create_appshell  # noqa: E402
@@ -65,7 +79,25 @@ from dash_improve_my_llms import (  # noqa: E402
 
 # The version requirements.txt pins. Checked at startup — see the floors block
 # below for why this is worth a line of output on every boot.
-LLMS_PKG_FLOOR = (2, 3, 4)
+#
+# 2.5.1 was the Tier-B SEO standard: `configure_seo` (icons, social card,
+# publisher/sameAs), the crawler <title> carrying the site name, per-page
+# `title`/`image_url`/`schema_type` actually reaching the crawler document,
+# /favicon.ico answered with a redirect instead of the app shell, and a
+# prerender that no longer clobbers the browser's per-page <title>.
+# 2.6.0 raises it to the honesty standard: sitemap <lastmod> is emitted
+# verbatim from `register_page_metadata(lastmod=)` and OMITTED when unset.
+# The floor is load-bearing for HONESTY, not crash avoidance: older
+# packages take `lastmod=` into **kwargs and silently ignore it, so below
+# the floor every date this repo stamped is swallowed and the sitemap goes
+# back to swearing everything changed at build time. Also in 2.6.0: icon
+# autodiscovery (this app still declares explicitly; the two must agree —
+# tests/test_seo_icons.py), JSON-LD publisher.logo, and the viewer banner
+# de-dup.
+# `configure_seo` is deliberately imported AFTER this floor fires (see the
+# floors block) so a stale environment gets the floor's diagnosis instead of
+# a bare ImportError.
+LLMS_PKG_FLOOR = (2, 6, 0)
 
 # Analytics tracking
 from lib.analytics_tracker import tracker  # noqa: E402
@@ -74,6 +106,12 @@ from lib.analytics_tracker import tracker  # noqa: E402
 from lib.constants import (  # noqa: E402
     APP_TITLE,
     BASE_URL,
+    OG_IMAGE_ALT,
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_URL,
+    OG_IMAGE_WIDTH,
+    PUBLISHER,
+    SAME_AS,
     SITE_BRAND,
     SITE_DESCRIPTION,
     require_owned_base_url,
@@ -138,6 +176,19 @@ if LLMS_PKG_FLOOR > _version(LLMS_PKG_VERSION):
         "silently degrades to whatever `app.title` happens to be.",
         fatal=True,
     )
+
+# Imported after the floor on purpose: on a pre-2.5.0 package this name does
+# not exist, and the floor's diagnosis above beats a bare ImportError. The
+# fallback exists only for ALLOW_STALE_DEPS=1 — the floor is fatal otherwise.
+try:
+    from dash_improve_my_llms import configure_seo  # noqa: E402
+except ImportError:  # pragma: no cover — ALLOW_STALE_DEPS with a pre-2.5.0 package
+
+    def configure_seo(**_kwargs) -> None:
+        print(
+            "[dash-pannellum] WARNING: configure_seo unavailable (pre-2.5.0 "
+            "package) — crawler identity tags and root icons not emitted."
+        )
 
 if DASH_VERSION < (4, 4):
     # Fatal only on FastAPI, where it is not a degradation but an outage:
@@ -277,6 +328,46 @@ register_page_metadata(
     path="/",
     name=SITE_BRAND,
     description=SITE_DESCRIPTION,
+    # The home page of a component library is a SoftwareApplication, not a
+    # generic WebPage — the one structured-data type that exactly describes
+    # it. Docs pages default to TechArticle in pages/markdown.py.
+    schema_type="SoftwareApplication",
+)
+
+# ============================================================================
+# Site identity for the CRAWLER document (dash-improve-my-llms 2.5.0).
+# Until 2.5.0 the generated crawler HTML carried the page's content signals
+# and none of its identity: browsers got 4-7 icon links, og:image and a
+# twitter card from templates/index.html while Googlebot got zero of any of
+# them, on every host in the network — so search showed the generic globe.
+# One declaration covers every crawler surface, and it also claims
+# /favicon.ico (Google's fallback), which Dash's page catch-all was
+# answering with the app shell. Content may differ between the crawler
+# document and the browser document; identity may not.
+# ============================================================================
+configure_seo(
+    icons=[
+        # Same paths templates/index.html links, so the two heads agree.
+        # The .ico href is the assets/favicon/ copy (byte-identical to the
+        # root one index.html links) so this list is SET-equal to what
+        # 2.6.0's autodiscovery finds — tests/test_seo_icons.py pins that
+        # agreement, which is the proof the fleet can rely on discovery
+        # alone once its pixels are right.
+        "/assets/favicon/favicon.ico",
+        {"href": "/assets/favicon/favicon-32x32.png", "sizes": "32x32"},
+        {"href": "/assets/favicon/favicon-16x16.png", "sizes": "16x16"},
+        {"href": "/assets/favicon/favicon-96x96.png", "sizes": "96x96"},
+        {"href": "/assets/favicon/android-chrome-192x192.png", "sizes": "192x192"},
+        {"href": "/assets/favicon/android-chrome-512x512.png", "sizes": "512x512"},
+        {"href": "/assets/favicon/apple-touch-icon.png",
+         "rel": "apple-touch-icon", "sizes": "180x180"},
+    ],
+    social_image=OG_IMAGE_URL,
+    social_image_alt=OG_IMAGE_ALT,
+    social_image_width=OG_IMAGE_WIDTH,
+    social_image_height=OG_IMAGE_HEIGHT,
+    publisher=PUBLISHER,
+    same_as=SAME_AS,
 )
 
 # ============================================================================
@@ -373,18 +464,35 @@ print(
 
 from lib import access as _access  # noqa: E402
 from lib import page_tiers as _page_tiers  # noqa: E402
+from lib import page_visibility as _page_visibility  # noqa: E402
 
 # Tiered corpus documents (dash-improve-my-llms >= 2.4.0). Pseudo-paths:
 # they never enter dash.page_registry, so they cannot leak into listings —
 # registering them here lets this satellite tier its compact briefing and
-# full corpus via env (LLMS_SMALL_TIER / LLMS_FULL_TIER; unset = the
-# default tier, i.e. public), and the hub can tighten either network-wide
-# through its page-tier ceilings with no redeploy here. Inert on older
-# package versions.
-_page_tiers.register("/llms-small.txt", os.environ.get("LLMS_SMALL_TIER"))
-_page_tiers.register("/llms-full.txt", os.environ.get("LLMS_FULL_TIER"))
+# full corpus via env (LLMS_SMALL_TIER / LLMS_FULL_TIER), and the hub can
+# tighten either network-wide through its page-tier ceilings with no
+# redeploy here. The explicit `or "public"` matters: these registered under
+# the PAGE_DEFAULT_TIER fallback before, which meant flipping that env to
+# gate the *interactive* site would silently gate the corpus documents too.
+# Their tier is now always a deliberate setting, never an ambient default.
+_page_tiers.register("/llms-small.txt",
+                     os.environ.get("LLMS_SMALL_TIER") or "public")
+_page_tiers.register("/llms-full.txt",
+                     os.environ.get("LLMS_FULL_TIER") or "public")
 
-ACCESS_ENABLED = _access.configure()
+# The home page registers via pages/home.py, not pages/markdown.py, so no
+# frontmatter ever declares its tier — under PAGE_DEFAULT_TIER=auth it would
+# silently inherit the gate. The funnel's front door stays public, always.
+_page_tiers.register("/", "public")
+
+# force= when either gate env is present: with every tier still public the
+# auto-detect would skip the wiring, but a host that flips by env needs the
+# verdict plumbing (and the prerender's use of it) live during the dark
+# launch, not on the flip.
+ACCESS_ENABLED = _access.configure(
+    force=bool(os.environ.get("PAGE_DEFAULT_TIER")
+               or os.environ.get("LLMS_PUBLIC_DEFAULT"))
+)
 
 # Wire up the package: /llms.txt, /<page>/llms.txt, /robots.txt, /sitemap.xml,
 # bot-detection middleware, and (on Dash 4.3+) MCP resource registration.
@@ -396,6 +504,32 @@ add_llms_routes(app, LLMSConfig(warn_missing_llms_doc=True))
 app.layout = create_appshell(dash.page_registry.values())
 
 server = app.server
+
+# ============================================================================
+# The person→agent handoff: /api/agent-key turns the browser's Clerk session
+# into a portable ?key= for copied llms.txt URLs (lib/agent_key.py). 204 for
+# everyone until Clerk and the hub are configured — safe to mount always.
+# ============================================================================
+
+from lib.agent_key import register_agent_key_route  # noqa: E402
+
+register_agent_key_route(app, BACKEND)
+
+# The gate's boot line. Prefixed `[boilerplate/<app>]` rather than this
+# repo's usual `[dash-pannellum]` on purpose: the gate-wave acceptance is
+# read from the deploy log across all 14 hosts, and one uniform prefix is
+# what makes that grep work fleet-wide.
+_non_public = sum(1 for t in _page_tiers.registered().values() if t != "public")
+print(
+    f"[boilerplate/pannellum] interactive gate: default tier "
+    f"'{os.environ.get('PAGE_DEFAULT_TIER') or 'public'}', "
+    f"{_non_public} non-public page(s), machine surfaces "
+    f"{'GATED' if not _page_tiers.get_llms_public('/__probe__') else 'open'} "
+    f"by default (LLMS_PUBLIC_DEFAULT), access wiring "
+    f"{'ON' if ACCESS_ENABLED else 'off'}, control board at "
+    f"/admin/control-board ({_page_visibility.override_count()} live "
+    f"override(s))."
+)
 
 # ============================================================================
 # Analytics Tracking (FastAPI) — added LAST on purpose.

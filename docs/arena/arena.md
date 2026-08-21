@@ -4,6 +4,7 @@ description: Drive a 360° petri-dish arena with DashRCJoystick — floor tilese
 endpoint: /components/arena
 package: dash_pannellum
 icon: mdi:gamepad-variant
+lastmod: 2026-08-02
 ---
 
 .. llms_copy::Joystick Arena

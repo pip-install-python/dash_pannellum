@@ -4,6 +4,7 @@ description: Place clickable hotspots in a panorama that fire Dash callbacks wit
 endpoint: /components/hotspots
 package: dash_pannellum
 icon: mdi:cursor-default-click-outline
+lastmod: 2026-06-15
 ---
 
 .. llms_copy::Callback Hotspots

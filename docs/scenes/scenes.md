@@ -4,6 +4,7 @@ description: Every Pannellum scene option passes through the tour prop — plus 
 endpoint: /components/scenes
 package: dash_pannellum
 icon: tabler:adjustments-alt
+lastmod: 2026-06-15
 ---
 
 .. llms_copy::Scene Configuration

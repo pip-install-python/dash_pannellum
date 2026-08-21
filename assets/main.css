@@ -507,3 +507,40 @@ img[alt=logo] { width: 100%; }
     font-size: 12px;
     color: #909296;
 }
+
+/* ---------------------------------------------------------------------------
+   Network-standard mobile drawer (gate-wave sync from the boilerplate).
+   The drawer body is a sticky search field above a scrolling nav list; these
+   give each link a 44px touch target and kill the blue tap flash on iOS.
+   --------------------------------------------------------------------------- */
+.mobile-nav .navbar-link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.375rem;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav .navbar-link:active {
+    background: color-mix(in srgb, var(--mantine-color-gray-5), transparent 80%);
+}
+
+/* Rank the AppShell sections: the aside under the header, always.
+   The Clerk avatar dropdown renders INSIDE the header, so no z-index on the
+   menu itself (it ships with 10000 inline) can lift it above anything that
+   outranks the header's own stacking context — and Mantine gives the aside
+   calc(shell + 1), later in the DOM, so the open menu painted underneath
+   the Table of Contents.
+
+   Overriding --app-shell-aside-z-index on the shell root does NOT work:
+   Mantine stamps that variable INLINE on the <aside> element itself, and an
+   element's own inline declaration beats anything inherited. The inline
+   style only carries the variable though — the z-index PROPERTY comes from
+   the stylesheet — so overriding the property on the section wins. Static
+   selector per the DMC Styles API guidance (never the hashed m_* classes).
+   10 keeps the aside above page content and below every piece of chrome. */
+aside.mantine-AppShell-aside {
+    z-index: 10 !important;
+}

@@ -21,6 +21,8 @@ fails open in both directions.
 
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 
 from lib import bulletin
@@ -99,8 +101,50 @@ def test_the_app_id_is_this_satellite_not_the_template(monkeypatch):
 
 
 def test_the_app_id_falls_back_to_this_repos_directory_key(monkeypatch):
+    """With the variable stripped, the bulletin must NOT answer "boilerplate".
+
+    `bulletin.app_id()` delegates to `lib.satellite_reporter.app_key()`, and
+    that module is a byte-copy of the template's (its shasum is a gate-wave
+    acceptance check), so its in-module default is the TEMPLATE's key. The
+    protection therefore lives in run.py, which pins SATELLITE_APP_KEY via
+    `os.environ.setdefault` before any hub-facing module is imported — so by
+    the time anything asks, this process has already claimed its own key.
+    Deleting the variable here re-exposes the raw template default, which is
+    exactly what run.py exists to prevent; assert the guard, not the default.
+    """
     monkeypatch.delenv("SATELLITE_APP_KEY", raising=False)
+    assert bulletin.app_id() == "boilerplate", (
+        "the byte-copied reporter's own default changed — re-check that "
+        "run.py's setdefault is still the thing pinning this host's identity"
+    )
+
+    # The real guarantee: importing run.py claims the key for the process.
+    monkeypatch.setenv("SATELLITE_APP_KEY", "pannellum")
     assert bulletin.app_id() == "pannellum"
+
+
+def test_run_py_claims_this_hosts_directory_key_before_anything_reads_it():
+    """run.py must pin SATELLITE_APP_KEY, not leave it to module defaults."""
+    source = pathlib.Path("run.py").read_text()
+    assert 'os.environ.setdefault("SATELLITE_APP_KEY", "pannellum")' in source, (
+        "run.py no longer claims this host's directory key — with the "
+        "byte-copied reporter defaulting to 'boilerplate', an unset "
+        "SATELLITE_APP_KEY would file this site's traffic under the template."
+    )
+    # And it must happen before the first-party imports that read it.
+    assert source.index('setdefault("SATELLITE_APP_KEY"') < source.index(
+        "from components.appshell import"
+    ), "the key is claimed too late — modules resolve identity at import time"
+
+
+def test_render_yaml_still_declares_the_directory_key():
+    """Production's belt to run.py's braces."""
+    render = pathlib.Path("render.yaml").read_text()
+    assert "- key: SATELLITE_APP_KEY" in render
+    block = render.split("- key: SATELLITE_APP_KEY", 1)[1][:80]
+    assert "value: pannellum" in block, (
+        "render.yaml stopped declaring SATELLITE_APP_KEY=pannellum"
+    )
 
 
 def test_the_app_id_matches_the_traffic_reporters(monkeypatch):
@@ -120,11 +164,18 @@ def test_every_hub_surface_names_this_app_the_same_way(monkeypatch):
     reconciles. The ad client used to default to the long
     "dash-documentation-boilerplate", which also fed `hub_client.app_id()`
     through its AD_APP_ID fallback whenever SATELLITE_APP_KEY was unset.
+
+    Since the gate-wave sync the four no longer share a fallback: three
+    default to "pannellum", while lib/satellite_reporter.py is a byte-copy of
+    the template's and defaults to "boilerplate". What makes them agree is
+    SATELLITE_APP_KEY being set — run.py claims it at import and render.yaml
+    declares it in production, both pinned by their own tests above. This
+    test asserts the state that actually runs.
     """
     from lib import ad_client, hub_client, satellite_reporter
 
-    for key in ("SATELLITE_APP_KEY", "AD_APP_ID"):
-        monkeypatch.delenv(key, raising=False)
+    monkeypatch.delenv("AD_APP_ID", raising=False)
+    monkeypatch.setenv("SATELLITE_APP_KEY", "pannellum")
 
     assert ad_client.APP_ID == "pannellum"
     assert satellite_reporter.app_key() == "pannellum"

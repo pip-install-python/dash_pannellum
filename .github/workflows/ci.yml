@@ -13,7 +13,8 @@
 #   * a secretless in-process pytest suite — no CLERK_*, no
 #     CROSS_APP_WEBHOOK_SECRET — because the fail-closed behaviour is only
 #     provable when nothing is configured;
-#   * an advisory pip-audit.
+#   * a GATING pip-audit (advisory until 2026-08-21, when the clerk 7 /
+#     cryptography 50 floors made the baseline quiet).
 
 name: CI
 
@@ -139,20 +140,29 @@ jobs:
         run: |
           python - <<'PY'
           import dash, dash_improve_my_llms as pkg, gunicorn
+          import dash_mantine_components as dmc
 
           def parts(v):
               return tuple(int(x) for x in v.split(".")[:3] if x.isdigit())
 
           # 4.4 floor: 4.3.0's FastAPI backend 500s on every non-root URL.
           assert parts(dash.__version__)[:2] >= (4, 4), dash.__version__
-          # 2.3.4 is the network standard: below it `resolve_site_title` does
-          # not exist and this site's published identity degrades to app.title.
-          assert parts(pkg.__version__) >= (2, 3, 4), pkg.__version__
+          # 2.6.0 is the honesty standard: below it `lastmod=` is swallowed
+          # into **kwargs and every date docs/ stamps is dropped from the
+          # sitemap. (2.3.4 was the older floor — below THAT,
+          # `resolve_site_title` does not exist and this site's published
+          # identity degrades to app.title.) run.py enforces the same floor
+          # fatally at boot; this asserts the artifact actually carries it.
+          assert parts(pkg.__version__) >= (2, 6, 0), pkg.__version__
+          # 2.8.0: on 2.7.0 the network-standard mobile drawer renders as a
+          # floating card from identical props.
+          assert parts(dmc.__version__)[:2] >= (2, 8), dmc.__version__
           # 21.x carried two request-smuggling CVEs (CVE-2024-6827,
           # CVE-2024-1135). markdown2dash's spurious <22 pin must not win.
           assert parts(gunicorn.__version__)[:2] >= (23, 0), gunicorn.__version__
           print(f"dash {dash.__version__}, dash-improve-my-llms "
-                f"{pkg.__version__}, gunicorn {gunicorn.__version__}")
+                f"{pkg.__version__}, dmc {dmc.__version__}, "
+                f"gunicorn {gunicorn.__version__}")
           PY
 
       # No CLERK_*, no CROSS_APP_WEBHOOK_SECRET, no SESSION_SECRET here ON
@@ -217,7 +227,25 @@ jobs:
 
           v = version('dash-improve-my-llms')
           print('dash-improve-my-llms', v)
-          assert parts(v) >= (2, 3, 4), f'expected >=2.3.4 (resolve_site_title), image has {v}'
+          assert parts(v) >= (2, 6, 0), f'expected >=2.6.0 (truthful sitemap lastmod), image has {v}'
+
+          v = version('dash-mantine-components')
+          print('dash-mantine-components', v)
+          assert parts(v)[:2] >= (2, 8), f'expected dmc >=2.8 (drawer renders as a card on 2.7), image has {v}'
+
+          # Vendored, so nothing upstream can bump it for us. 1.0.4 is the
+          # first release whose FastAPI auth endpoints are callable at all,
+          # and this image runs DASH_BACKEND=fastapi in production — below
+          # it, Clerk cannot complete a sign-in here.
+          v = version('dash-clerk-auth')
+          print('dash-clerk-auth', v)
+          assert parts(v) >= (1, 0, 5), f'expected dash-clerk-auth >=1.0.5, image has {v}'
+
+          # The advisory floors: clerk-backend-api 5.x capped cryptography
+          # below the fixes for four advisories.
+          v = version('cryptography')
+          print('cryptography', v)
+          assert parts(v)[:1] >= (50,), f'expected cryptography >=50, image has {v}'
 
           # markdown2dash installs with --no-deps to dodge its gunicorn<22
           # pin; this assert is what proves the dodge kept working. 21.x
@@ -274,13 +302,19 @@ jobs:
         run: docker logs --tail 40 docs 2>/dev/null || true
 
   pip-audit:
-    name: pip-audit (advisory)
+    name: pip-audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Advisory on purpose. A CVE in a transitive dependency of a docs site is
-    # worth knowing about the day it lands, and worth nobody's broken build at
-    # 2am. The report is the value; flip this off once the baseline is quiet.
-    continue-on-error: true
+    # NO LONGER ADVISORY (gate-wave, 2026-08-21). This job ran
+    # `continue-on-error: true` for as long as the baseline was noisy — four
+    # cryptography advisories this repo could not reach a fix for while
+    # dash-clerk-auth pinned `clerk-backend-api<6`. That is resolved: the
+    # floors in requirements.txt (clerk-backend-api>=7.0.0,<8 +
+    # cryptography>=50.0.0) reach the fix for all four, and no advisory is
+    # suppressed here any more. A permanently-red advisory job trains
+    # everyone to ignore it; a quiet gating job is the only kind worth
+    # having, so new advisories now fail the build and block the deploy.
+    # To revert to advisory, restore `continue-on-error: true` on one line.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -4,6 +4,7 @@ description: Every DashPannellum prop — configuration, behavior and read-only 
 endpoint: /api
 package: dash_pannellum
 icon: mdi:api
+lastmod: 2026-06-15
 ---
 
 .. llms_copy::API Reference

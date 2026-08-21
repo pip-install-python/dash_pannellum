@@ -4,6 +4,7 @@ description: Stream gigapixel panoramas progressively with Pannellum's tiled mul
 endpoint: /components/multires
 package: dash_pannellum
 icon: mdi:grid-large
+lastmod: 2026-06-15
 ---
 
 .. llms_copy::Multi-Resolution

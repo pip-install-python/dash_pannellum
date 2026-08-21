@@ -4,6 +4,7 @@ description: A quick-sheet of directed camera motions — shake, knockdown, lung
 endpoint: /components/emotes
 package: dash_pannellum
 icon: tabler:movie
+lastmod: 2026-06-15
 ---
 
 .. llms_copy::Camera Emotes
