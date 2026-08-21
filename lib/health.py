@@ -13,9 +13,26 @@ reported back as this app being slow.
 """
 from __future__ import annotations
 
+import os
+
 import dash
 
-from lib.satellite_reporter import app_key, reporting_enabled
+from lib.satellite_reporter import app_key
+
+
+def reporting_enabled() -> bool:
+    """Whether the rollup can actually POST (the HMAC secret is set).
+
+    lib/satellite_reporter.py is a BYTE-COPY of the boilerplate's (its
+    shasum against the template is a gate-wave acceptance check), and the
+    gate-wave template dropped this helper — the boilerplate's own /healthz
+    doesn't publish a `reporting` field, so upstream had no use for it.
+    This host does publish it, so the predicate lives here instead of
+    reaching into the reporter's private `_secret()`: importing a private
+    name across a module we are contractually required to re-copy verbatim
+    would break silently on the next sync. One env read, same semantics.
+    """
+    return bool(os.getenv("CROSS_APP_WEBHOOK_SECRET"))
 
 
 def health_payload(backend: str) -> dict:

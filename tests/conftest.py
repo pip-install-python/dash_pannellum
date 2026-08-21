@@ -62,6 +62,9 @@ for _key in SECRET_ENV_KEYS:
 _TMP_STATE = tempfile.mkdtemp(prefix="pannellum-tests-")
 atexit.register(shutil.rmtree, _TMP_STATE, True)
 os.environ["TRAFFIC_ANALYTICS_FILE"] = os.path.join(_TMP_STATE, "visitor_analytics.json")
+# Same reason for the control board's override store — and pointing it at a
+# tmp path also keeps the import-time [visibility] boot warning quiet.
+os.environ["PAGE_VISIBILITY_FILE"] = os.path.join(_TMP_STATE, "page_visibility.json")
 # Behind Cloudflare in production; in tests an outbound ip-api.com lookup per
 # hit would make the suite depend on a third party being up.
 os.environ["ANALYTICS_GEO_LOOKUP"] = "0"

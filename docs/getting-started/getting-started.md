@@ -4,6 +4,7 @@ description: Install Dash Pannellum and embed your first interactive 360° panor
 endpoint: /getting-started
 package: dash_pannellum
 icon: mdi:rocket-launch-outline
+lastmod: 2026-08-16
 ---
 
 .. llms_copy::Getting Started

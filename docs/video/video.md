@@ -4,6 +4,7 @@ description: Play equirectangular 360° video through video.js, including HLS/DA
 endpoint: /components/video
 package: dash_pannellum
 icon: mdi:video
+lastmod: 2026-08-02
 ---
 
 .. llms_copy::360° Video

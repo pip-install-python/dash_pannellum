@@ -105,8 +105,10 @@ def test_the_image_is_declared_exactly_once(client, page_paths):
 def test_the_image_is_not_an_svg(client):
     """SVG is rejected by Facebook, Twitter/X, LinkedIn and Slack alike.
 
-    Dash's asset inference reaches `logo.<ext>` and this repo ships
-    `assets/logo.svg`, so this is one missing `image_url=` away from returning.
+    Dash's asset inference reaches `logo.<ext>`. The gate-wave pass deleted
+    the template's `assets/logo.svg`, so nothing is inferable today — but the
+    assertion stays: it is one re-added `logo.*` plus one missing `image_url=`
+    away from returning, and both are one-line edits.
     """
     for prop in ("og:image", "twitter:image"):
         for src in _meta(client.get("/").text, prop):

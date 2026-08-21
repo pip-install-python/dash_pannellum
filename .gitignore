@@ -152,3 +152,7 @@ visitor_analytics.json.lock
 
 # Claude Code session dir (user-attached screenshots land here; PyCharm auto-stages new files)
 .claude/
+
+# Flask-Session server-side session store — created at runtime whenever
+# Clerk is configured (lib/auth.py). Never source.
+flask_session/

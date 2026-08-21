@@ -4,6 +4,7 @@ description: Steer the 360° camera with the device's gyroscope — orientation 
 endpoint: /components/gyro
 package: dash_pannellum
 icon: mdi:rotate-3d-variant
+lastmod: 2026-06-15
 ---
 
 .. llms_copy::Gyro Look-Around

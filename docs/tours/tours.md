@@ -4,6 +4,7 @@ description: Build multi-scene 360° virtual tours with scene-switch hotspots an
 endpoint: /components/tours
 package: dash_pannellum
 icon: mdi:map-marker-path
+lastmod: 2026-06-15
 ---
 
 .. llms_copy::Virtual Tours

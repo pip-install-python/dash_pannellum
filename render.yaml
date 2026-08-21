@@ -77,6 +77,13 @@ services:
       # Without it the app still serves /healthz but reports nothing.
       - key: CROSS_APP_WEBHOOK_SECRET
         sync: false
+      # 15 minutes, not the code default of hourly: the fleet is on paid
+      # instances now and the hub board reads near-real-time. The live
+      # "active now" number rides the separate presence beacon
+      # (SATELLITE_PRESENCE_INTERVAL_S, default 60s, 0 disables) — this knob
+      # only paces the daily rollup.
+      - key: SATELLITE_REPORT_INTERVAL_S
+        value: "900"
       - key: SATELLITE_APP_KEY
         value: pannellum
 
@@ -102,6 +109,22 @@ services:
       - key: LLMS_FULL_TIER
         value: public
 
+      # THE per-host gate switch: flip to `auth` and every docs page whose
+      # frontmatter doesn't pin a tier shows the sign-in card to anonymous
+      # browsers. Rollback is flipping it back — env only, no code revert.
+      # Funnel pages (/, the corpus pseudo-paths) are pinned public in
+      # run.py and never inherit this. Shipping DARK: `public` for now, and
+      # the flip is a separate owner pre-flight step.
+      - key: PAGE_DEFAULT_TIER
+        value: public
+      # The second axis, and the phase-4 agent flip: while "1", machine
+      # surfaces (llms.txt family, crawler HTML, the prerender) stay open on
+      # auth pages so the crawl-demand window keeps measuring. "0" gates
+      # anonymous machine fetches too (keyed agents still pass). Do not flip
+      # before the window closes — see kickoff/fleet/KICKOFF-fleet-check.md.
+      - key: LLMS_PUBLIC_DEFAULT
+        value: "1"
+
       # The hub takes the LAST report for a given (app, date). On an
       # ephemeral filesystem a mid-day deploy wipes the ledger and the next
       # hourly report overwrites the day's real total with whatever accrued
@@ -109,10 +132,23 @@ services:
       - key: TRAFFIC_ANALYTICS_FILE
         value: /var/data/visitor_analytics.json
 
+      # Control-board overrides (/admin/control-board) persist here — on the
+      # same disk, so toggles survive deploys. TWICE on the pilot host this
+      # row rode render.yaml without reaching the live service (Blueprint env
+      # applies only on a sync) and every toggle silently reset per deploy;
+      # the boot now prints a [visibility] WARNING when the variable is
+      # missing OR when /var/data is not actually a mounted disk. The absence
+      # of that warning in a deploy log is the acceptance check.
+      - key: PAGE_VISIBILITY_FILE
+        value: /var/data/page_visibility.json
+
       # --- Clerk satellite auth (lib/auth.py) --------------------------
-      # All OPTIONAL: with these absent the site runs fully public. Uses
-      # dash-clerk-auth 0.9.1 (vendored; 0.9.0 ships a dead avatar on
-      # satellite domains). Set the two keys to turn auth on.
+      # All OPTIONAL: with these absent the site runs fully public and admin
+      # surfaces fail CLOSED (lib.auth.admin_access_open). Uses
+      # dash-clerk-auth 1.0.5 (vendored) — and on THIS host the floor is
+      # load-bearing, not cosmetic: 1.0.4 is the first release whose FastAPI
+      # auth endpoints are callable at all, and this service runs
+      # DASH_BACKEND=fastapi. Set the two keys to turn auth on.
       - key: CLERK_SECRET_KEY
         sync: false
       - key: CLERK_PUBLISHABLE_KEY
@@ -123,6 +159,14 @@ services:
         value: https://accounts.2plot.ai/sign-in
       - key: CLERK_SIGN_UP_URL
         value: https://accounts.2plot.ai/sign-up
+      # Where the sign-in card sends an anonymous visitor. lib/auth.py builds
+      # `<value>?returnTo=<here>`, so `true` or a bare host resolves against
+      # THIS site and the button 404s — worse than unset. lib/auth.py warns
+      # at boot for both mistakes; the absence of those warnings is the
+      # deploy acceptance check. Remember blueprint-vs-dashboard: the
+      # DASHBOARD add is what reaches the live service.
+      - key: CLERK_SATELLITE_SIGN_IN_REDIRECT
+        value: https://2plot.ai/onboarding
       # REQUIRED in satellite mode. A production custom-domain instance
       # cannot derive this from CLERK_SIGN_IN_URL.
       - key: CLERK_FRONTEND_API
@@ -144,6 +188,10 @@ services:
       # falls back to a PUBLIC dev default string.
       - key: SESSION_SECRET
         generateValue: true
+      # Admin allowlist for admin-tier pages, including the control board
+      # (lib.auth.is_admin_user). Absent, admin surfaces fail CLOSED.
+      - key: ADMIN_EMAILS
+        sync: false
 
     disk:
       name: analytics

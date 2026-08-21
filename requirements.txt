@@ -13,7 +13,12 @@ dash[fastapi]>=4.4.0
 flask>=3.0.0
 
 # UI stack for the documentation app
-dash-mantine-components>=2.7.0
+# 2.8.0 floor, not 2.7.0: on 2.7.0 the network-standard mobile drawer renders
+# as a floating card from identical props (components/navbar.py). 2.8's
+# ActionIcon/Anchor also REJECT `title=` — passing it raises TypeError during
+# app construction, so the whole site fails to boot rather than rendering a
+# wrong tooltip. Use `aria-label` for names and `dmc.Tooltip` for hover text.
+dash-mantine-components>=2.8.0
 dash-iconify>=0.1.2
 dash-ag-grid
 dash-gauge>=0.0.2   # DashRCJoystick — drives the Joystick Arena example
@@ -48,7 +53,7 @@ mistune>=3.0.0
 # markdown2dash==0.1.2        <- installed --no-deps, see above
 
 # AI/LLM Integration & SEO — from PyPI; the vendored 2.0.0 tarball is gone.
-# 2.5.1 is the Tier-B SEO standard: configure_seo (icons, social card,
+# 2.5.1 was the Tier-B SEO standard: configure_seo (icons, social card,
 # publisher/sameAs), crawler <title> carrying the site name, per-page
 # title/image_url/schema_type reaching the crawler document, /favicon.ico
 # answered with a redirect instead of the app shell, and a prerender that
@@ -57,13 +62,36 @@ mistune>=3.0.0
 # (the /llms.txt H1, the llms viewer's brand chip) silently degrades to
 # `app.title`. tests/test_site_identity.py asserts the installed version,
 # and CI asserts it again inside the image.
-dash-improve-my-llms[flask,fastapi]>=2.5.1
+#
+# 2.6.0 raises it to the honesty standard: sitemap <lastmod> is emitted
+# verbatim from register_page_metadata(lastmod=) and OMITTED when unset.
+# The floor is load-bearing for HONESTY, not crash avoidance — pre-2.6
+# packages swallow `lastmod=` into **kwargs and ignore it silently, so
+# below the floor every date this repo stamps is dropped and the sitemap
+# goes back to swearing everything changed at build time. 2.6.0 also adds
+# icon autodiscovery, which is why the favicon pixels had to be this site's
+# own BEFORE this floor moved: discovery would otherwise have cemented the
+# template's mark as this host's identity. They were already correct here
+# (all eight files distinct from the template), so the ordering rule cost
+# nothing on this host — tests/test_seo_icons.py pins discovery and the
+# explicit configure_seo(icons=) list to the same set.
+dash-improve-my-llms[flask,fastapi]>=2.6.0
 
 # Clerk satellite auth for the HOSTED docs site only (lib/auth.py) — fully
 # dormant without the CLERK_* env keys. Not on PyPI, vendored like leaflet's.
-# 1.0.2 floor: 0.9.0 ships a dead avatar on satellite domains, and 1.0.2 fixes
-# a second avatar bug — the menu could paint signed-out over a valid session.
-./vendor/dash_clerk_auth-1.0.2.tar.gz
+# 1.0.5 floor, and for this host the floor is load-bearing rather than
+# cosmetic: 1.0.4 is the FIRST release whose FastAPI auth endpoints are
+# callable at all — 1.0.3 and earlier 422'd every POST, which is inert on
+# Flask but fatal here, because this site runs DASH_BACKEND=fastapi in
+# production. Anything below 1.0.4 ships a Clerk that cannot complete a
+# sign-in on this backend. 1.0.5 adds the return-trip stale-gate
+# reconciliation and the shared no-loop marker on top.
+# Taken from the hook repo's dist/ ONLY (the artifact IS the release, never
+# a branch build) and verified before vendoring:
+#   sha256 a2f9062e15a69fc79deeaf76fcf1380907a961978db558b2aa227572cb2b74f3
+# Earlier builds of both 1.0.4 and 1.0.5 went stale on sdist-shipped doc
+# edits, so the hash is the check that matters, not the filename.
+./vendor/dash_clerk_auth-1.0.5.tar.gz
 # RESOLVED — this is the tarball the note below was waiting for. dash-clerk-auth
 # 1.0.1 relaxed its own `<6` pin to `<8`, so clerk-backend-api 7.0.0 (which
 # allows `cryptography<51.0.0`) is now reachable and the floor below clears all
