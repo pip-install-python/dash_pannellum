@@ -140,6 +140,17 @@ def create_header(data):
                                         fw=700,
                                         c="#12B886",
                                         id="dash-docs-title",
+                                        # Phones show the hamburger, the logo
+                                        # mark, GitHub, the theme toggle and
+                                        # the Clerk avatar; the wordmark is
+                                        # what pushes that row past the edge.
+                                        # Same breakpoint the header Select
+                                        # already uses, so the two collapse
+                                        # together rather than one at a time.
+                                        # The element stays in the DOM, so
+                                        # assets/text_animation.js still finds
+                                        # it by id.
+                                        visibleFrom="sm",
                                     ),
                                 ],
                                 gap="sm",
