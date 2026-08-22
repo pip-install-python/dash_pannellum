@@ -52,9 +52,12 @@ UA = _INTERNAL_UA + " network-smoke"
 CRAWLER_UA = "Mozilla/5.0 (compatible; Googlebot/2.1) " + _INTERNAL_UA
 
 # The body dash-improve-my-llms serves when a page has no prose registered.
-# Matched in full, deliberately: this app's own <noscript> block legitimately
-# says "requires JavaScript", and a substring check on that phrase reports a
-# perfectly healthy host as broken. (It did, the first time this ran.)
+# Matched in full, deliberately: a substring check on "requires JavaScript"
+# reports a perfectly healthy host as broken the moment any page legitimately
+# uses that phrase. (It did, the first time this ran, against this app's own
+# <noscript> block — since removed, because dimll 2.6.1's visible prerender
+# made it redundant. The full match is still the right check: the phrase can
+# come back in ordinary prose at any time.)
 STUB_MARKER = "This page contains interactive content that requires JavaScript"
 
 # ---------------------------------------------------------------- per-site --
