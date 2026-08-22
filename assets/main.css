@@ -202,10 +202,16 @@ input:invalid {
     }
 }
 
-.m_b8a05bbd {
-    margin-top: 80px !important;
-    height: 63vh !important;
-}
+/* REMOVED: a `.m_b8a05bbd { margin-top: 80px; height: 63vh }` override.
+   That hash is the Drawer's `content` element, and the rule dated from the
+   old floating-card mobile nav, where a hand-set height was how the panel
+   got a size at all. The network-standard drawer sizes itself — see
+   components/navbar.py's `styles={"inner": ..., "content": ...}`, which
+   docks the panel below the header and fills the rest of the viewport.
+   Both rules carried `!important`, so they beat the inline styles Mantine
+   writes from that Styles API dict: the panel got 63vh instead of full
+   height AND an 80px margin on top of the header offset it already had.
+   Style the Drawer through navbar.py, never through the hashed class. */
 
 div .m_46b77525 {
     margin-top: calc(0.5rem* var(--mantine-scale)) !important;
