@@ -97,7 +97,10 @@ from dash_improve_my_llms import (  # noqa: E402
 # `configure_seo` is deliberately imported AFTER this floor fires (see the
 # floors block) so a stale environment gets the floor's diagnosis instead of
 # a bare ImportError.
-LLMS_PKG_FLOOR = (2, 6, 0)
+# 2.6.1 additionally serves that prerender VISIBLE — below it the block
+# carries a literal `hidden` attribute and every visibility-respecting
+# non-JS reader gets "Loading..." instead of the page's prose.
+LLMS_PKG_FLOOR = (2, 6, 1)
 
 # Analytics tracking
 from lib.analytics_tracker import tracker  # noqa: E402

@@ -75,7 +75,16 @@ mistune>=3.0.0
 # (all eight files distinct from the template), so the ordering rule cost
 # nothing on this host — tests/test_seo_icons.py pins discovery and the
 # explicit configure_seo(icons=) list to the same set.
-dash-improve-my-llms[flask,fastapi]>=2.6.0
+# 2.6.1 floor, and the floor is what makes it STICK: the universal
+# prerender ships VISIBLE to non-JS consumers, where 2.6.0 wrapped it in
+# a literal `hidden` attribute and every visibility-respecting reader saw
+# only "Loading...". Measured on this host 2026-08-22: a deploy that
+# changed only lib/ left the image on 2.6.0, because Dockerfile:25-26
+# COPY+install requirements.txt long before COPY lib, so both dependency
+# layers were cache hits and pip never re-resolved. Moving this line is
+# what invalidates them. run.py's LLMS_PKG_FLOOR and two asserts in
+# ci.yml encode the same number — grep the number, not the file.
+dash-improve-my-llms[flask,fastapi]>=2.6.1
 
 # Clerk satellite auth for the HOSTED docs site only (lib/auth.py) — fully
 # dormant without the CLERK_* env keys. Not on PyPI, vendored like leaflet's.
