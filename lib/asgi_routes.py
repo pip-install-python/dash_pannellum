@@ -50,11 +50,32 @@ class PageListResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
+    """The probe contract, identical on every backend.
+
+    ``lib.health.health_payload`` is the single source — this model only
+    types it for Swagger. Every field the payload can carry must appear
+    here: Pydantic drops keys the model does not declare, so a field added
+    to the payload but not to this class is served on Flask and silently
+    ABSENT on FastAPI. That is not hypothetical — it is how a FastAPI
+    deployment came to lack ``build``, which cd.yml's build-match wait polls
+    for, leaving it in the "predates the build field" warning path forever
+    and verifying whichever release happened to be serving (the muicharts
+    defect the wait was written to prevent, reintroduced per-backend; found
+    on llms-2plot-dev, 2026-08-23). This host runs FastAPI in production,
+    so this model is the one that decides what the hub actually sees.
+    """
+
     ok: bool = True
-    app: str
     backend: str
     dash_version: str
-    reporting: bool
+    # Optional because they are environment- or package-dependent, not
+    # backend-dependent. `geo` is omitted entirely on a pre-2.7.0 package —
+    # its absence in production means the >=2.7.1 floor never reached the
+    # image, i.e. the Docker dependency-layer cache trap fired.
+    build: Optional[str] = None
+    app: Optional[str] = None
+    reporting: Optional[bool] = None
+    geo: Optional[dict] = None
 
 
 # ---------------------------------------------------------------------------
@@ -104,9 +125,9 @@ def build_health_router() -> APIRouter:
 
     @router.get("/healthz", response_model=HealthResponse, summary="Liveness probe")
     def healthz() -> HealthResponse:
-        # Same payload as lib/health.py builds for Flask/Quart — one source,
-        # so the hub sweep and the fleet battery see identical fields on
-        # every backend.
+        # One payload builder for all three backends — see HealthResponse.
+        # Built per request: `geo` reports live state, and this route is
+        # mounted long before any geo configuration runs.
         from lib.health import health_payload
 
         return HealthResponse(**health_payload("fastapi"))

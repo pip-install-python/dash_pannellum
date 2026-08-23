@@ -20,7 +20,22 @@ ENV PYTHONUNBUFFERED=1
 
 RUN pip install --no-cache-dir --upgrade pip
 
-# dash-clerk-auth is not on PyPI; requirements.txt installs it from ./vendor.
+# dash-clerk-auth is not on PyPI; requirements.txt installs it from ./vendor —
+# so vendor/ MUST be copied before the requirements install. Auth stays gated
+# at runtime: no CLERK_* keys, no login wall.
+#
+# CACHE SEMANTICS (the round-2 fleet lesson, found on THIS host 2026-08-22):
+# this layer re-runs ONLY when vendor/ or requirements.txt bytes change. A
+# `>=` floor can NEVER pull a newer release through a cache hit — a code-only
+# commit rebuilds the app layers below while pip silently keeps whatever
+# version the image was first built with. That is not hypothetical here: a
+# commit touching only lib/ deployed green and left this image on dimll 2.6.0
+# for hours while requirements.txt said `>=2.6.0` and 2.6.1 was on PyPI; the
+# prerender stayed `hidden` and nothing looked broken. Ship every dependency
+# upgrade as a floor bump in requirements.txt (grep the number — it also
+# lives in run.py's boot floor and in ci.yml's asserts): the bump IS the
+# cache bust, and the boot floor turns a stale image from a silent downgrade
+# into a loud refusal to start.
 COPY vendor ./vendor
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

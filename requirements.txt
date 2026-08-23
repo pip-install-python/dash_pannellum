@@ -84,7 +84,19 @@ mistune>=3.0.0
 # layers were cache hits and pip never re-resolved. Moving this line is
 # what invalidates them. run.py's LLMS_PKG_FLOOR and two asserts in
 # ci.yml encode the same number — grep the number, not the file.
-dash-improve-my-llms[flask,fastapi]>=2.6.1
+# 2.7.1 floor (the round-3 fleet number). 2.7.0 dedups the prerender H1
+# — the injected header's h1 versus the doc body's own markdown H1, which
+# made every page a duplicate-H1 page to crawlers (measured on this host
+# 2026-08-22: two h1 per route after the no-JS block came out, and the
+# preamble that produced the second is correct for /llms.txt, so it could
+# only ever be fixed upstream) — and the home footer's doubled /llms.txt
+# link, and hardens the idempotency probe so a page MENTIONING the
+# prerender marker no longer disables prerendering. 2.7.1 adds the
+# llms.txt v2 discovery relations (rel=alternate/describedby on both
+# lanes + Link headers), the Accept: text/plain ramp, and the
+# representation content digest. run.py's LLMS_PKG_FLOOR and two asserts
+# in ci.yml encode the same number — grep the number, not the file.
+dash-improve-my-llms[flask,fastapi]>=2.7.1
 
 # Clerk satellite auth for the HOSTED docs site only (lib/auth.py) — fully
 # dormant without the CLERK_* env keys. Not on PyPI, vendored like leaflet's.

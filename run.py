@@ -100,7 +100,13 @@ from dash_improve_my_llms import (  # noqa: E402
 # 2.6.1 additionally serves that prerender VISIBLE — below it the block
 # carries a literal `hidden` attribute and every visibility-respecting
 # non-JS reader gets "Loading..." instead of the page's prose.
-LLMS_PKG_FLOOR = (2, 6, 1)
+# 2.7.1 is the round-3 fleet floor: 2.7.0 dedups the prerender H1 (the
+# injected header's h1 against the doc body's own) and the home footer's
+# doubled /llms.txt link, and hardens the idempotency probe so a page
+# that merely MENTIONS the prerender marker keeps its prerender. 2.7.1
+# adds the llms.txt v2 discovery relations + Link headers, the
+# Accept: text/plain ramp, and the representation content digest.
+LLMS_PKG_FLOOR = (2, 7, 1)
 
 # Analytics tracking
 from lib.analytics_tracker import tracker  # noqa: E402
@@ -174,9 +180,13 @@ if LLMS_PKG_FLOOR > _version(LLMS_PKG_VERSION):
     _dependency_floor(
         f"dash-improve-my-llms {LLMS_PKG_VERSION} is below the "
         f"{'.'.join(str(n) for n in LLMS_PKG_FLOOR)} floor in requirements.txt. "
-        "Below 2.3.0 the rendered llms.txt viewer, wordmark and navigation "
-        "block do not exist at all; below 2.3.4 this site's published identity "
-        "silently degrades to whatever `app.title` happens to be.",
+        "Below 2.7.1 the llms.txt v2 discovery relations, the Link headers "
+        "and the representation digest are absent; below 2.7.0 every page "
+        "serves a DUPLICATE H1 to crawlers (the injected header's against "
+        "the doc body's own) and a page mentioning the prerender marker "
+        "silently loses its prerender. Below 2.6.1 the prerender ships "
+        "`hidden` and no-JS readers get \"Loading...\"; below 2.3.4 this "
+        "site's published identity degrades to whatever `app.title` is.",
         fatal=True,
     )
 

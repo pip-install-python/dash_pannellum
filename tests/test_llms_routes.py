@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import re
 import xml.etree.ElementTree as ET
+
+import pytest
 from urllib.parse import urlparse
 
 from conftest import BROWSER_ACCEPT, CRAWLER_UA
@@ -145,6 +147,108 @@ def test_healthz(client):
     assert body["ok"] is True
     assert body["app"] == "pannellum"
     assert body["reporting"] is False
+
+
+def test_healthz_is_live_not_a_snapshot(monkeypatch):
+    """The payload must be built per request, not closed over at registration.
+
+    This host carried the snapshot form until the round-3 sync: the route
+    captured `health_payload(backend)` once and returned the same dict
+    forever. Harmless while every field was static, and silently wrong the
+    moment one is not — `geo` reports LIVE state and the route is registered
+    long before any geo configuration runs, so a snapshot reports the
+    guardrail unconfigured on a host where it is configured: the diagnostic
+    lying in exactly the situation it exists for (found on llms-2plot-dev
+    2026-08-23).
+    """
+    from types import SimpleNamespace
+
+    from flask import Flask
+
+    from lib.health import register_health_route
+
+    monkeypatch.setenv("SATELLITE_APP_KEY", "before")
+    stub = SimpleNamespace(server=Flask("healthz_snapshot_pin"))
+    register_health_route(stub, "flask")
+    probe = stub.server.test_client()
+    assert probe.get("/healthz").get_json()["app"] == "before"
+
+    monkeypatch.setenv("SATELLITE_APP_KEY", "after")
+    assert probe.get("/healthz").get_json()["app"] == "after", (
+        "the payload was captured at registration — a snapshot again"
+    )
+
+
+def test_healthz_identity_fields(monkeypatch):
+    """`build` says which commit answered, `app` says which satellite.
+
+    Different questions on a fleet where every host shares one template and
+    a hostname can be repointed between services. `app` reads the env
+    directly rather than satellite_reporter.app_key(), whose byte-copied
+    fallback is "boilerplate" — a lie in the one field whose job is saying
+    who answered. Unset must read "unknown", never another host's key.
+    """
+    from lib.health import health_payload
+
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "cafebabe")
+    monkeypatch.setenv("SATELLITE_APP_KEY", "pannellum")
+    payload = health_payload("flask")
+    assert payload["build"] == "cafebabe"
+    assert payload["app"] == "pannellum"
+
+    monkeypatch.delenv("SATELLITE_APP_KEY")
+    assert health_payload("flask")["app"] == "unknown", (
+        "an unset key must not fall back to the template's directory key"
+    )
+
+
+def test_fastapi_healthz_renders_from_the_shared_payload(monkeypatch):
+    """cd.yml's build-match wait polls /healthz for `build`.
+
+    Pydantic DROPS keys HealthResponse does not declare, so a field added to
+    the payload but not to the model is served on Flask and silently absent
+    on FastAPI — which is how a FastAPI deploy fell into the "predates the
+    build field" warning path forever, verifying whichever release happened
+    to be serving (the muicharts defect, reintroduced per-backend; found on
+    llms-2plot-dev 2026-08-23). This host RUNS FastAPI in production, so
+    this is the lane the hub actually sweeps.
+    """
+    fastapi = pytest.importorskip("fastapi")
+    from fastapi.testclient import TestClient
+
+    from lib.asgi_routes import build_health_router
+
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "cafebabe")
+    monkeypatch.setenv("SATELLITE_APP_KEY", "pannellum")
+    api = fastapi.FastAPI()
+    api.include_router(build_health_router())
+    body = TestClient(api).get("/healthz").json()
+    assert body["build"] == "cafebabe"
+    assert body["app"] == "pannellum"
+    assert body["backend"] == "fastapi"
+    assert "reporting" in body, "this host's own field must survive the model"
+
+
+def test_healthz_geo_block_is_counts_not_codes():
+    """Present on dash-improve-my-llms >= 2.7.0 (counts and flags only — a
+    health endpoint is not where anyone learns policy), OMITTED on older
+    packages rather than error-flagged: a host on an older floor is not
+    broken, it predates the diagnostic. Its absence in PRODUCTION is the
+    fleet's tell that the >=2.7.1 floor never reached the image."""
+    from lib.health import health_payload
+
+    payload = health_payload("flask")
+    try:
+        from dash_improve_my_llms import geo  # noqa: F401
+    except ImportError:
+        assert "geo" not in payload
+    else:
+        block = payload["geo"]
+        assert isinstance(block["configured"], bool)
+        assert isinstance(block["denied"], int), "counts, never country codes"
+        assert not any(
+            isinstance(v, (list, tuple)) for v in block.values()
+        ), "the denylist's country codes must never reach this payload"
 
 
 # ---------------------------------------------------------------------------
