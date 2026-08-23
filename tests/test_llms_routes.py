@@ -178,6 +178,12 @@ def test_healthz_is_live_not_a_snapshot(monkeypatch):
         "the payload was captured at registration — a snapshot again"
     )
 
+    # Flask lane: the route hands its OWN request headers to geo's
+    # `resolved` — same contract the FastAPI test pins for Starlette.
+    body = probe.get("/healthz", headers={"CF-IPCountry": "FR"}).get_json()
+    if body.get("geo"):
+        assert "FR" in body["geo"]["resolved"], body["geo"]
+
 
 def test_healthz_identity_fields(monkeypatch):
     """`build` says which commit answered, `app` says which satellite.
@@ -222,11 +228,20 @@ def test_fastapi_healthz_renders_from_the_shared_payload(monkeypatch):
     monkeypatch.setenv("SATELLITE_APP_KEY", "pannellum")
     api = fastapi.FastAPI()
     api.include_router(build_health_router())
-    body = TestClient(api).get("/healthz").json()
+    body = TestClient(api).get(
+        "/healthz", headers={"CF-IPCountry": "DE"}
+    ).json()
     assert body["build"] == "cafebabe"
     assert body["app"] == "pannellum"
     assert body["backend"] == "fastapi"
     assert "reporting" in body, "this host's own field must survive the model"
+    # THIS request's headers must reach geo's `resolved`. The route passes
+    # them explicitly because the Flask-context fallback can never see a
+    # Starlette request — and this is the lane the hub sweeps in
+    # production, where healthz answered "no request context" on every
+    # sweep until template 1.6.12 (2026-08-23).
+    if body.get("geo"):
+        assert "DE" in body["geo"]["resolved"], body["geo"]
 
 
 def test_healthz_geo_block_is_counts_not_codes():
