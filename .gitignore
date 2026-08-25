@@ -150,8 +150,28 @@ visitor_analytics.json
 .satellite_report.lease
 visitor_analytics.json.lock
 
-# Claude Code session dir (user-attached screenshots land here; PyCharm auto-stages new files)
-.claude/
+# Session working documents are LOCAL BY CONVENTION, network-wide: sync
+# reports, handoffs, and kickoff briefs name hosts, topology, and process.
+# Two public fleet repos were caught tracking theirs and clerkhook's staged
+# handoff (naming the full satellite inventory) was one push from public
+# (2026-08-24). The ignore rule is the enforcement, here and in every fork.
+# X402-SYNC-REPORT.md lived in .git/info/exclude until the kit round — a
+# per-clone exclude protects one checkout and no fork.
+X402-SYNC-REPORT.md
+HANDOFF-*.md
+KICKOFF-*.md
+
+# The .claude/ development kit IS shipped — it is how every fork inherits
+# the network's behavioral contract, skills, and settings (the F1 fabric
+# build, 2026-08-24). Everything else in .claude/ stays local: session
+# scratch, screenshots (this repo has two), settings.local.json (per-seat
+# model overrides), vendored iteration copies. Allow-list, not blanket
+# ignore — a dir-level ignore cannot be re-included beneath, hence the /*
+# form.
+.claude/*
+!.claude/CLAUDE.md
+!.claude/settings.json
+!.claude/skills/
 
 # Flask-Session server-side session store — created at runtime whenever
 # Clerk is configured (lib/auth.py). Never source.
