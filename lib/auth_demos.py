@@ -10,9 +10,12 @@ imported — and their callbacks already registered — when pages/markdown.py
 parses the docs at startup. Only one layout (gate card OR full docs) renders
 per request, so sharing the component instances never duplicates IDs.
 
-The table ships EMPTY in the template: entries are site-specific dotted
-paths, so each satellite fills in its own hero example (one entry is plenty —
-this is a funnel, not a gallery).
+The table ships with ONE working entry in the template — the pattern, live —
+and each satellite swaps in its own hero example (one entry is plenty; this
+is a funnel, not a gallery). An empty table is legitimate too: cards render
+without the demo block. Either way tests/test_auth_demos.py holds the line —
+every entry that IS here must resolve on THIS site, because build_demo below
+degrades silently by design.
 
 Entries:
     endpoint -> {
@@ -30,17 +33,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-DEMOS: dict[str, dict] = {
-    # The template ships ONE working entry so every fork sees the pattern
-    # live: gate /examples/visualization (control board or `tier: auth`
-    # frontmatter) and its sign-in card renders this chart above the
-    # "Authentication required" copy. Swap in your own hero example.
-    "/examples/visualization": {
-        "module": "docs.data-visualization.basic_chart",
-        "caption": "Live theme-aware chart",
-        "max_height": 420,
-    },
-}
+# EMPTY on purpose (2026-08-26). The inherited template entry —
+# /examples/visualization -> docs.data-visualization.basic_chart — named a
+# page and a module this site does not have, so its card could never render
+# and its warning could never fire (template 1.6.26 item 3). It is deleted,
+# not replaced: nothing here is gated. Every docs page declares no `tier:`,
+# PAGE_DEFAULT_TIER is unset so the default is `public`, and production
+# serves /components/tours, /components/arena, /api and /getting-started 200
+# with no "Authentication required" card (measured 2026-08-26). An entry
+# pointing at an ungated page would resolve for the test and still never
+# render — the same silent-inert shape this item exists to kill.
+#
+# When a page IS gated (control board, or `tier: auth` frontmatter), one
+# entry is the whole job — the hero candidate is the tour, whose example
+# module already exposes a module-level `component`:
+#
+#     "/components/tours": {
+#         "module": "docs.tours.tour_example",
+#         "caption": "Live 360° virtual tour",
+#         "max_height": 420,
+#     },
+DEMOS: dict[str, dict] = {}
 
 
 def build_demo(path: str):
