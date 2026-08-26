@@ -4,7 +4,7 @@
 # wrappers are COMMITTED to git (dash_pannellum/*.min.js + *.py), so
 # `pip install .` works without npm. TRADE-OFF: changes under src/lib require
 # a local `npm run build` and committing the regenerated artifacts.
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
