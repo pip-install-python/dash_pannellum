@@ -56,7 +56,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
           cache: pip
       - run: pip install flake8
       - name: flake8
@@ -84,17 +84,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Both backends this site supports get a run on the current Python
-        # and the pinned Dash...
-        python: ["3.12"]
+        # Both backends this site supports get a run on the FLEET Python —
+        # the one the Dockerfile ships and production therefore serves
+        # (template 1.6.27 item 5; tests/test_python_version.py pins this
+        # literal against the image's FROM tag). Before this round the main
+        # row said 3.12 while the image said 3.14: the unit suite never once
+        # ran on the interpreter that serves, and nothing could see it.
+        python: ["3.14"]
         backend: [flask, fastapi]
         dash: [""]
         include:
-          # ...the supported Python range gets a run on the default backend...
-          - python: "3.11"
+          # ...and the compat window stays three wide on the default backend,
+          # X.Y-1 and X.Y-2. These legs are the reason 3.14 can move again
+          # without a flag day; they are also why the boot step below stands
+          # the battery's python_matches_declared check down (their gunicorn
+          # is deliberately NOT the image's interpreter).
+          - python: "3.13"
             backend: flask
             dash: ""
-          - python: "3.13"
+          - python: "3.12"
             backend: flask
             dash: ""
           # ...and the bottom of the >=4.4 range is pinned explicitly on both
@@ -176,6 +184,13 @@ jobs:
 
       - name: Boot under a production server
         if: matrix.backend == 'flask'
+        env:
+          # This gunicorn serves the MATRIX LEG's interpreter (3.13/3.12 on
+          # the window rows) while the Dockerfile declares the fleet Python —
+          # off-contract for the battery's python_matches_declared check by
+          # design, so it stands down here. The docker job below and CD's
+          # verify leave it armed: there the interpreter IS the artifact.
+          SMOKE_PYTHON_DECLARED: ignore
         run: |
           gunicorn run:server -b 127.0.0.1:8561 --daemon --access-logfile - --error-logfile -
           for _ in $(seq 1 30); do
@@ -345,7 +360,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - run: pip install pip-audit
       # Skip local vendor/ paths — pip-audit can only assess PyPI dists.
       #

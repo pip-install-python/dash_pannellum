@@ -63,6 +63,12 @@ def wired(battery, client, monkeypatch):
 
     monkeypatch.setattr(battery, "fetch", fetch)
     monkeypatch.setattr(battery, "_RESULTS", [])
+    # No declaration in the in-process seat: here the "host" serves from the
+    # suite's own interpreter, which on the matrix's window legs (3.13/3.12)
+    # is deliberately not the fleet Python. The python_matches_declared
+    # check still proves the field EXISTS; holding the artifact to the
+    # Dockerfile's minor is the container and production seats' job.
+    monkeypatch.setattr(battery, "declared_python_minor", lambda: None)
     battery.seen_agents = seen_agents
     return battery
 
@@ -116,3 +122,27 @@ def test_the_default_base_url_matches_the_container_port(battery):
     # Render injects PORT, so the CMD binds ${PORT:-<default>} — the default
     # must still match the battery's port (same shape as dash-email's image).
     assert f":${{PORT:-{port}}}" in dockerfile, "the CMD binds a different port"
+
+
+def test_network_smoke_urlopens_pass_the_ssl_context():
+    """Source pin: EVERY urlopen in network_smoke.py must carry
+    context=SSL_CONTEXT.
+
+    Same class as the pin in tests/test_smoke_live.py, same reason it needs
+    a SOURCE pin rather than a wired one: every test here monkeypatches
+    `fetch`, so no behavioural test can ever see the handshake. This script
+    RAISES after its retries, so on a Python without OS trust-store
+    integration (macOS — the seat the fleet's F4 battery sweeps from) the
+    first https probe aborted the whole run and a perfectly healthy
+    satellite read as down. Linux CI verifies fine and never shows it.
+    """
+    import re
+
+    source = (REPO_ROOT / "scripts" / "network_smoke.py").read_text()
+    calls = re.findall(r"urlopen\((?:[^)]|\n)*?\)", source)
+    assert calls, "no urlopen calls found in network_smoke.py — probe rewritten?"
+    naked = [c for c in calls if "context=SSL_CONTEXT" not in c]
+    assert not naked, (
+        f"urlopen without context=SSL_CONTEXT in network_smoke.py: {naked} — "
+        "on macOS this dies in the handshake and reads as a dead host"
+    )

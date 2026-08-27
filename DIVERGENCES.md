@@ -28,6 +28,20 @@ template counterpart — they are additional, not different. Per-fork
 values (host, brand, page set, port 8561, image name, social card)
 are the fork ritual, not divergences.
 
+One consequence of that extra half is worth stating outright, because
+it looks exactly like drift: **this repo has TWO Pythons on purpose.**
+The SITE lane — `ci.yml`, `cd.yml`, the Dockerfile, render.yaml — is
+pinned to the fleet Python (3.14, template spec 1.6.27/1.6.28 item 5)
+and `tests/test_python_version.py` holds every one of those encodings
+to the image's `FROM` minor. The PACKAGE lane — `release.yml`, which
+verifies the tag and builds the `dash-pannellum` wheel for PyPI —
+stays on its own pin and is deliberately NOT scanned by that test. The
+wheel is pure Python and its audience is every Dash user's
+environment, not this container; the spec says a package matrix is the
+package's business. A sync that "aligns" release.yml to the container
+base has conflated the two lanes, which is the defect item 5 exists to
+prevent, not the fix.
+
 ## This repo's divergences
 
 1. **`/healthz` publishes a `reporting` field** — `{..., "reporting":

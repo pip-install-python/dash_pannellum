@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import platform
 import re
 import xml.etree.ElementTree as ET
 
@@ -140,6 +141,10 @@ def test_healthz(client):
     overwrites another app's analytics rows on the hub, and this field is
     how the fleet battery catches it. `reporting` must be False here: the
     suite runs secretless, so the rollup thread has nothing to sign with.
+    `python` is the serving interpreter (template 1.6.27 item 5) — asserted
+    against the running one rather than a literal, because the suite
+    legitimately runs on the matrix's window legs; holding the ARTIFACT to
+    the image's minor is scripts/network_smoke.py's job, against a host.
     """
     response = client.get("/healthz")
     assert response.ok
@@ -147,6 +152,7 @@ def test_healthz(client):
     assert body["ok"] is True
     assert body["app"] == "pannellum"
     assert body["reporting"] is False
+    assert body["python"] == platform.python_version()
 
 
 def test_healthz_is_live_not_a_snapshot(monkeypatch):
@@ -235,6 +241,14 @@ def test_fastapi_healthz_renders_from_the_shared_payload(monkeypatch):
     assert body["app"] == "pannellum"
     assert body["backend"] == "fastapi"
     assert "reporting" in body, "this host's own field must survive the model"
+    # Same trap, newest field: without `python` on HealthResponse the hub
+    # sweeps this host forever and never learns which interpreter serves,
+    # while the Flask lane publishes it and every local check passes. The
+    # battery's python_matches_declared reads exactly this key.
+    assert body.get("python") == platform.python_version(), (
+        "the `python` field did not survive Pydantic — the fastapi lane is "
+        "the one production serves and the hub sweeps"
+    )
     # THIS request's headers must reach geo's `resolved`. The route passes
     # them explicitly because the Flask-context fallback can never see a
     # Starlette request — and this is the lane the hub sweeps in

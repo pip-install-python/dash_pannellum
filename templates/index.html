@@ -81,9 +81,22 @@
     <meta property="og:site_name" content="dash-pannellum — 360° panoramas for Dash">
     <meta property="og:locale" content="en_US">
 
-    <!-- Same rule: Dash emits twitter:card, twitter:url, twitter:title,
-         twitter:description and twitter:image per page. Only the alt text is
-         left, because Dash omits it. -->
+    <!-- Same rule: Dash emits twitter:url, twitter:title, twitter:description
+         and twitter:image per page, so those are not repeated here.
+         twitter:card IS repeated, on purpose. Dash writes it as
+         `property="twitter:card"`; the crawler document dash-improve-my-llms
+         builds writes the spec's `name="twitter:card"`. Both are valid to
+         Twitter, but they are DIFFERENT tags to every parser that reads by
+         attribute — so the two heads disagreed on the one field that decides
+         whether a share renders as a large image or a bare link, and only the
+         crawler half was right (measured on production 2026-08-26: crawler
+         ['summary_large_image'], browser []). The static name= tag below is
+         what makes the browser head say the same thing. Keep its value in
+         step with the card's shape (1200x630 -> summary_large_image);
+         scripts/smoke_live.py's identity-parity block fails the deploy if
+         these two heads ever part again. Alt text stays because Dash omits
+         it entirely. -->
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image:alt" content="dash-pannellum — 360° panoramas for Dash">
 
     <!-- ========================================================================
@@ -98,6 +111,20 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon/favicon-96x96.png">
+    <!-- The two large squares are NOT decoration and NOT optional. 192x192 is
+         the size Google's indexer prefers for the favicon it shows beside a
+         search result, and 512 is what an install prompt uses. run.py's
+         configure_seo(icons=) has declared both since the Tier-B round, so the
+         CRAWLER head carried them while this browser head did not — the exact
+         crawler/browser identity split the 2.5.0 standard exists to close,
+         shipped here for weeks (measured on production 2026-08-26: crawler
+         6 sizes, browser 4). Both files ship in assets/favicon/ and the
+         manifest already references them. This list and run.py's must stay
+         set-equal; tests/test_seo_icons.py pins run.py's against discovery,
+         and scripts/smoke_live.py's identity-parity block pins the two heads
+         against each other on the wire. -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon/android-chrome-512x512.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/apple-touch-icon.png">
     <link rel="manifest" href="/assets/favicon/site.webmanifest">
     <meta name="theme-color" content="#12B886">

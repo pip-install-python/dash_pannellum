@@ -173,7 +173,13 @@ def test_the_declared_ratio_suits_a_large_image_card():
 
 
 def test_the_twitter_card_is_a_large_image(client):
-    assert _meta(client.get("/").text, "twitter:card") == ["summary_large_image"]
+    html = client.get("/").text
+    # Every declaration agrees on the value, and the one Twitter can read is
+    # present: its parser predates the OG convention and reads name=, never
+    # property=. Dash's property= copy is unavoidable dead weight; the name=
+    # tag in index.html is the functional declaration.
+    assert set(_meta(html, "twitter:card")) == {"summary_large_image"}
+    assert 'name="twitter:card"' in html
 
 
 def test_no_meta_tag_dash_emits_is_also_declared_statically(client):
@@ -183,10 +189,19 @@ def test_no_meta_tag_dash_emits_is_also_declared_statically(client):
     of each, and the static one describes the SITE where Dash's describes the
     PAGE — so the duplicate is both redundant and the less accurate of the
     two. Every one of these shipped doubled before the rollout.
+
+    `twitter:card` is the deliberate exception since the 2.5.x SEO standard:
+    Dash declares it with `property=`, which Twitter does not read, so the
+    static `name=` copy in index.html is not a duplicate — it is the only
+    declaration any scraper can see, and both carry the same value. On this
+    host that split was measurable on the wire before the fix (2026-08-26):
+    the crawler document carried `name="twitter:card"` and the browser
+    document carried none, so the two heads disagreed on the field that
+    decides whether a share renders as a card at all.
     """
     html = client.get("/").text
     for tag in ("description", "og:type", "og:title", "og:description",
-                "og:image", "twitter:card", "twitter:url", "twitter:title",
+                "og:image", "twitter:url", "twitter:title",
                 "twitter:description", "twitter:image"):
         found = _meta(html, tag)
         assert len(found) <= 1, f"{tag} is declared {len(found)} times: {found}"

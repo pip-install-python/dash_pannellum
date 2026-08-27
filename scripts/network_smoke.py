@@ -36,6 +36,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import ssl
 import sys
 import time
 import urllib.error
@@ -96,6 +98,29 @@ class SmokeFailure(Exception):
     pass
 
 
+def _ssl_context() -> ssl.SSLContext:
+    """Verify certificates via certifi when available.
+
+    Same fix, same reason as scripts/smoke_live.py: macOS Python ships
+    without OS trust-store integration, so a bare urllib https fetch dies in
+    the handshake with CERTIFICATE_VERIFY_FAILED. This script raises after
+    its retries, so on a Mac the whole battery aborted on the first probe and
+    read as "the host is down" — the F4 sweep seat is a Mac, and a healthy
+    satellite looked dead from it. CI (Linux) never sees this. Verification
+    stays ON either way; certifi only supplies the CA bundle, and http://
+    targets (the CI container) are unaffected.
+    """
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
+SSL_CONTEXT = _ssl_context()
+
+
 def fetch(url: str, ua: str = UA, method: str = "GET",
           body: bytes | None = None, headers: dict | None = None,
           timeout: int = TIMEOUT, retries: int = 3):
@@ -115,7 +140,9 @@ def fetch(url: str, ua: str = UA, method: str = "GET",
         for k, v in (headers or {}).items():
             req.add_header(k, v)
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as r:
+            with urllib.request.urlopen(
+                req, timeout=timeout, context=SSL_CONTEXT
+            ) as r:
                 return (r.status, {k.lower(): v for k, v in r.headers.items()},
                         r.read().decode("utf-8", "replace"))
         except urllib.error.HTTPError as e:
@@ -150,6 +177,34 @@ def expect(cond: bool, msg: str) -> None:
 
 # ------------------------------------------------------------- the battery --
 
+def declared_python_minor():
+    """The fleet Python this checkout declares: the Dockerfile's FROM minor.
+
+    None when there is nothing to hold the host against — no Dockerfile
+    beside this script (the script run outside a checkout) — or when the
+    seat itself is off-contract: SMOKE_PYTHON_DECLARED=ignore is set by
+    ci.yml's matrix boot step, whose gunicorn deliberately runs the LEG's
+    interpreter (3.13/3.12), and tests/test_network_smoke.py's in-process
+    seat monkeypatches this to None for the same reason. The seats that
+    leave it armed are exactly the ones whose interpreter is a deploy
+    artifact: the docker container in CI and production in CD.
+    """
+    if os.environ.get("SMOKE_PYTHON_DECLARED") == "ignore":
+        return None
+    dockerfile = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "Dockerfile")
+    try:
+        with open(dockerfile, encoding="utf-8") as fh:
+            for line in fh:
+                m = re.match(r"FROM\s+python:(\d+\.\d+)", line)
+                if m:
+                    return m.group(1)
+    except OSError:
+        pass
+    return None
+
+
 def satellite_checks(base: str) -> None:
     get = lambda path, **kw: fetch(base + path, **kw)  # noqa: E731
 
@@ -157,6 +212,30 @@ def satellite_checks(base: str) -> None:
         status, _, text = get("/healthz")
         expect(status == 200, f"/healthz {status}")
         expect(json.loads(text).get("ok") is True, f"unexpected body {text[:120]!r}")
+
+    def python_matches_declared():
+        # WHICH interpreter serves, versus the one this repo declares. Three
+        # Pythons coexisted across the fleet for months (image, matrix,
+        # render.yaml) because nothing on the wire could contradict any of
+        # them — /healthz's `python` field is the observability, and this
+        # check is the teeth: the served minor must equal the Dockerfile's
+        # FROM minor. On THIS host the field has to survive Pydantic too
+        # (lib/asgi_routes.HealthResponse), because production is fastapi —
+        # a field present on the Flask lane and absent on the served one
+        # would make this check fail against production and pass in every
+        # local run.
+        status, _, text = get("/healthz")
+        expect(status == 200, f"/healthz {status}")
+        served = json.loads(text).get("python") or ""
+        expect(bool(served), "/healthz carries no `python` field — the "
+               "serving interpreter is invisible (pre-1.6.27 build?)")
+        declared = declared_python_minor()
+        if declared is None:
+            return
+        served_minor = ".".join(served.split(".")[:2])
+        expect(served_minor == declared,
+               f"host serves Python {served}, repo declares {declared} — "
+               "a stale image, or a platform runtime nobody aligned")
 
     def llms_txt_identity():
         # The check this whole standard exists for. The H1 is what an agent
@@ -252,6 +331,7 @@ def satellite_checks(base: str) -> None:
 
     for name, fn in (
         ("healthz_ok", healthz_ok),
+        ("python_matches_declared", python_matches_declared),
         ("llms_txt_identity", llms_txt_identity),
         ("llms_txt_names_the_hub", llms_txt_names_the_hub),
         ("page_llms_nav", page_llms_nav),

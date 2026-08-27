@@ -64,6 +64,18 @@ def wired(smoke, client, monkeypatch):
         if url.startswith(BASE):
             path = url[len(BASE):] or "/"
             response = client.get(path, user_agent=user_agent, accept=accept)
+            # urllib — what the real script fetches with — follows redirects;
+            # the test client does not. The root icon paths 302 to /assets
+            # from dash-improve-my-llms 2.5 on, so follow same-host hops here
+            # or the favicon checks would fail only under test.
+            hops = 0
+            while response.status in (301, 302, 307, 308) and hops < 3:
+                location = response.header("Location")
+                if location.startswith("http") and not location.startswith(BASE):
+                    break
+                path = location[len(BASE):] if location.startswith(BASE) else location
+                response = client.get(path, user_agent=user_agent, accept=accept)
+                hops += 1
             return response.status, response.text, response.headers
         if url == OG_IMAGE_URL:
             # The social card lives on the CDN, so it is off-host like the
@@ -110,14 +122,32 @@ def test_smoke_script_detects_a_stub_body(wired, smoke, monkeypatch, capsys):
 
 
 def test_smoke_script_detects_a_foreign_canonical(wired, smoke, monkeypatch, capsys):
+    """The rewrite host is DERIVED from BASE_URL, never spelled literally.
+
+    Before 1.6.8 this stub spelled the template's hostname: on any renamed
+    fork the replace matched nothing, the canonical stayed correct, and the
+    test passed as a no-op — a guard that silently stops guarding on
+    exactly the sites that need it (found by llms-2plot-dev's fork audit).
+    The in-stub assertion makes that failure mode loud: if the rewrite ever
+    touches a canonical-bearing page without changing it, the test errors
+    instead of vacuously passing.
+    """
     original = smoke.fetch
 
     def rehosted(url, user_agent=smoke.BROWSER_UA, accept=None):
         status, body, headers = original(url, user_agent, accept)
-        return status, body.replace(
-            'rel="canonical" href="https://pannellum.2plot.dev',
+        needle = f'rel="canonical" href="{BASE}'
+        rewritten = body.replace(
+            needle,
             'rel="canonical" href="https://someone-elses-host.example.com',
-        ), headers
+        )
+        if 'rel="canonical"' in body:
+            assert rewritten != body, (
+                "canonical present but the rewrite matched nothing — the "
+                "stub's host has drifted from BASE_URL and this test would "
+                "pass vacuously"
+            )
+        return status, rewritten, headers
 
     monkeypatch.setattr(smoke, "fetch", rehosted)
     assert wired.main(BASE) > 0
@@ -425,6 +455,28 @@ def test_a_cold_host_wakes_and_the_probe_requires_ok_true(smoke, monkeypatch, ca
     assert "attempt 4" in capsys.readouterr().out
 
 
+def test_wake_survives_a_legacy_fetch_stub(smoke, monkeypatch, capsys):
+    """A pre-wake-vintage fetch stub must not TypeError the whole suite.
+
+    Every fork owns a version of THIS file, and the older ones monkeypatch
+    fetch as `(url, user_agent, accept)` without patching wake — the 1.6.28
+    fan-out shipped wake()'s `fetch(url, retries=1, timeout=10)` into that
+    and went red on 7 of 12 forks before a single check ran. wake now
+    falls back to a bare `fetch(url)` when the stub rejects its kwargs, so
+    a template copy landing ahead of the fork's stub update degrades to
+    the fork's own honest check results instead of a suite-wide crash.
+    """
+    monkeypatch.setattr(smoke, "time", _FakeTime())
+
+    def legacy(url, user_agent=smoke.BROWSER_UA, accept=None):
+        assert url.endswith("/healthz")
+        return 200, '{"backend":"flask","ok":true}', {}
+
+    monkeypatch.setattr(smoke, "fetch", legacy)
+    assert smoke.wake("https://x") is True
+    assert "attempt 1" in capsys.readouterr().out
+
+
 def test_a_host_that_never_wakes_is_one_failure_not_a_cascade(
     smoke, monkeypatch, capsys
 ):
@@ -479,10 +531,12 @@ def test_smoke_live_urlopens_pass_the_ssl_context():
     a SOURCE pin is the only net with a mesh this fine. Found by
     flexlayout, F1 kit adoption 2026-08-24.
 
-    This host has no post() — its smoke_live carries the single fetch()
-    urlopen, which already passes the context. The pin ships anyway as the
-    net: it sweeps every urlopen the file grows, which is the half that
-    ports everywhere (template 1.6.16 item 7).
+    This host DOES have a post() now (template 1.6.29 item 6, ported
+    2026-08-26 with the auth-wiring and head-parity blocks), so the pin is
+    no longer just a net for a file that might grow one: it guards the
+    exact call flexlayout found naked. Both urlopens — fetch()'s GET and
+    post()'s auth probe — must carry the context, and this sweeps every
+    one the file grows next (template 1.6.16 item 7).
     """
     import re
     from pathlib import Path

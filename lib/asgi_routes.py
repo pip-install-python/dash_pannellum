@@ -68,6 +68,13 @@ class HealthResponse(BaseModel):
     ok: bool = True
     backend: str
     dash_version: str
+    # The serving interpreter (template 1.6.27 item 5). Not Optional in the
+    # payload — platform.python_version() always answers — but declared here
+    # like the rest because Pydantic is the gate: omit it and the hub's sweep
+    # of THIS host, the fastapi one, would report no `python` at all while
+    # the Flask lane published it, which is the same silent per-backend split
+    # that cost this fleet the `build` field once already.
+    python: Optional[str] = None
     # Optional because they are environment- or package-dependent, not
     # backend-dependent. `geo` is omitted entirely on a pre-2.7.0 package —
     # its absence in production means the >=2.7.1 floor never reached the
