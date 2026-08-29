@@ -161,7 +161,7 @@ jobs:
           # `resolve_site_title` does not exist and this site's published
           # identity degrades to app.title.) run.py enforces the same floor
           # fatally at boot; this asserts the artifact actually carries it.
-          assert parts(pkg.__version__) >= (2, 7, 1), pkg.__version__
+          assert parts(pkg.__version__) >= (2, 8, 0), pkg.__version__
           # 2.8.0: on 2.7.0 the network-standard mobile drawer renders as a
           # floating card from identical props.
           assert parts(dmc.__version__)[:2] >= (2, 8), dmc.__version__
@@ -242,7 +242,7 @@ jobs:
 
           v = version('dash-improve-my-llms')
           print('dash-improve-my-llms', v)
-          assert parts(v) >= (2, 7, 1), f'expected >=2.7.1 (deduped h1 + llms.txt v2 discovery), image has {v}'
+          assert parts(v) >= (2, 8, 0), f'expected >=2.8.0 (one classifier + the read event), image has {v}'
 
           v = version('dash-mantine-components')
           print('dash-mantine-components', v)

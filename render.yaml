@@ -1,6 +1,7 @@
 # Render Blueprint — dash-pannellum docs (single web service, docker runtime).
-# Auto-deploys on push to main. Serves the component documentation, fronted by
-# https://pannellum.2plot.dev.
+# Auto-deploys the `release` branch — which only CD writes, as a fast-forward
+# push of a sha whose CI matrix went green. Serves the component
+# documentation, fronted by https://pannellum.2plot.dev.
 #
 # FIRST DEPLOY CHECKLIST:
 #   1. Create the Blueprint from this repo; fill every `sync: false` secret in
@@ -19,7 +20,11 @@
 #           `pannellum=https://pannellum.2plot.dev/healthz`
 #        b. pip-docs+ `lib/network_directory.py` — promote the `pannellum`
 #           entry planned -> live, add to VERIFIED_APP_IDS
-#   5. NOTE: Render applies blueprint envVars on a BLUEPRINT SYNC, not on an
+#   5. OWNER STEP (sync item 13): if this service is NOT Blueprint-managed,
+#      the `branch: release` below is documentation and the dashboard's
+#      Branch field is the switch. Set it to `release` there, or CD will
+#      promote a certified sha while Render keeps building main.
+#   6. NOTE: Render applies blueprint envVars on a BLUEPRINT SYNC, not on an
 #      autoDeploy from a git push. Values listed here must ALSO exist on the
 #      service (dashboard) — email.2plot.dev shipped wired bulletin code and
 #      an unwired deployment exactly this way.
@@ -27,6 +32,11 @@ services:
   - type: web
     name: dash-pannellum-docs
     runtime: docker
+    # `release` is written ONLY by CD (.github/workflows/cd.yml, job
+    # `deploy`: a fast-forward push of the run's sha after the matrix is
+    # green). A push to main is not a deploy. autoDeploy stays true:
+    # Render reacting to this branch IS the mechanism (sync item 13).
+    branch: release
     plan: starter
     dockerfilePath: ./Dockerfile
     dockerContext: .

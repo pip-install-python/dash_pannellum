@@ -1,5 +1,57 @@
 # Changelog
 
+## Unreleased — documentation site
+
+The `dash-pannellum` package is unchanged; everything here is
+pannellum.2plot.dev. (Site-only work has not been changelogged since
+2.0.0; this section starts doing so, because the first entry below
+changes numbers the hub already publishes.)
+
+### Changed
+
+- **The traffic numbers move, and the new ones are the true ones.**
+  The floor is now `dash-improve-my-llms>=2.8.0` and
+  `lib/analytics_tracker.py` no longer carries its own User-Agent
+  list — it delegates to the package's `classify()`, the same vendor
+  registry `/robots.txt` is rendered from. Consequence on adoption
+  day: **`human_hits` DROPS and `bot_hits` RISES.** UA-less and
+  library clients (`httpx`, `Go-http-client`, `node-fetch`, an empty
+  User-Agent) move from the human lane to the crawler lane, and
+  ClaudeBot is filed as *training* rather than *search* — it is
+  Anthropic's training crawler, which this repo's own run.py comment
+  had said for months six lines from where the list ignored it. The
+  hub's day-over-day view will show a step. That is the number
+  becoming true, not a regression.
+
+### Added
+
+- **The read table.** dash-improve-my-llms 2.8.0's `on_document_read`
+  hands the app one row per corpus document it serves — tier, verdict,
+  bytes, vendor, verification — and `AnalyticsTracker.record_read`
+  keeps it as a `reads` list in the same ledger file as `visits`, with
+  the same buffer, lock, flush cadence and retention. `reads` is
+  joined by the rollup, never summed into `human_hits` / `bot_hits` /
+  `pages`. `client_ip` is dropped unless `ANALYTICS_KEEP_CLIENT_IP=1`.
+- **Rollup v4**, additive and present only on a day that had reads:
+  `vendors[]` (one row per vendor × verification × policy, with a
+  per-tier breakdown) and `reads`. Every v3 key is byte-identical.
+- **`/admin/traffic`** — vendor × day, vendor → tier, and top paths per
+  vendor for the picked day, behind the control board's exact gate and
+  failing closed the same way. This is NOT the `/analytics/traffic`
+  dashboard removed on 2026-08-02: that page was a second, staler view
+  of the visits the hub already folds. This one shows the read table,
+  which did not exist then, and answers a question the hub cannot —
+  "does ClaudeBot actually get the corpus from THIS host?" Plain
+  tables, no charts, no interval callback.
+- **`release` is the deploy branch.** Render auto-deploys `release`,
+  and only CD's `deploy` job writes it: a fast-forward push of the
+  run's own sha after the CI matrix is green. A push to `main` is a
+  candidate, not a deploy, and `main` ahead of `release` means an
+  uncertified push is pending. The Render deploy-hook step is gone
+  from `cd.yml`; `verify` now runs only on a successful deploy and
+  asserts `/healthz build == github.sha` itself, so a verify can no
+  longer pass green against the previous build.
+
 ## 2.0.0 — 2026-08-02
 
 **The revival ships to PyPI** — the first published release since 0.0.6.

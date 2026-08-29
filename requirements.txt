@@ -84,7 +84,13 @@ mistune>=3.0.0
 # layers were cache hits and pip never re-resolved. Moving this line is
 # what invalidates them. run.py's LLMS_PKG_FLOOR and two asserts in
 # ci.yml encode the same number — grep the number, not the file.
-# 2.7.1 floor (the round-3 fleet number). 2.7.0 dedups the prerender H1
+# 2.8.0 floor (the ledger number, sync item 12). It moves the classifier
+# out of this repo: lib/analytics_tracker delegates to the package's
+# `classify()` — the same registry robots.txt is rendered from — instead of
+# carrying its own UA list, and `on_document_read` hands the app one row per
+# corpus document served, which becomes the ledger's `reads` table and rollup
+# v4's vendors[]. Below the floor neither name exists and boot stops.
+# 2.7.1 was the round-3 fleet number. 2.7.0 dedups the prerender H1
 # — the injected header's h1 versus the doc body's own markdown H1, which
 # made every page a duplicate-H1 page to crawlers (measured on this host
 # 2026-08-22: two h1 per route after the no-JS block came out, and the
@@ -96,7 +102,7 @@ mistune>=3.0.0
 # lanes + Link headers), the Accept: text/plain ramp, and the
 # representation content digest. run.py's LLMS_PKG_FLOOR and two asserts
 # in ci.yml encode the same number — grep the number, not the file.
-dash-improve-my-llms[flask,fastapi]>=2.7.1
+dash-improve-my-llms[flask,fastapi]>=2.8.0
 
 # Clerk satellite auth for the HOSTED docs site only (lib/auth.py) — fully
 # dormant without the CLERK_* env keys. Not on PyPI, vendored like leaflet's.

@@ -127,3 +127,26 @@ not a byte claim, and must not be read as one.
 
 ```yaml byte-owned
 ```
+
+## Declared posture
+
+The hub reads this fence instead of its own seeded table (template
+1.6.30). SHAPE is all `tests/test_claude_kit.py` validates: a wrong
+value is meant to be visibly wrong, and an omitted key reads as the
+template default.
+
+Only `deploy` is declared today. `ai_bots`, `healthz` and `runtime`
+belong to template item 9, which this fork has NOT consumed — the
+sync drop that produced this fence was scoped to items 12 and 13.
+Declaring them would mean publishing three measurements nobody in
+this session took; the honest state is silence. Item 9 stays open.
+
+`deploy: release-branch` is the road of item 13: Render auto-deploys
+`release`, and only `.github/workflows/cd.yml`'s `deploy` job writes
+it — a fast-forward push of the run's own sha after the CI matrix is
+green. `main` ahead of `release` is an uncertified push pending, not
+drift.
+
+```yaml posture
+deploy: release-branch
+```

@@ -171,3 +171,26 @@ they win.
   the same sha — key on the workflow path (cd.yml) instead.
 - The browser lane and the machine lane are different documents;
   a fix proven on one is unproven on the other.
+- There is ONE classifier: `dash_improve_my_llms.classify()` (sync item
+  12, dimll 2.8.0). Never add a User-Agent list to this app — the
+  tracker carried one for a year (`lib/analytics_tracker.py`), it filed
+  ClaudeBot as *search* when it is Anthropic's TRAINING crawler (the
+  package's registry and this repo's own `run.py` comment both said so
+  six lines from where the list ignored them), it still named the
+  retired `anthropic-ai` / `claude-web` tokens, and it counted every
+  UA-less or library client as a human. Every host in the fleet
+  reported those numbers. A token the registry lacks is a pushback to
+  the package seat, not a list here; `tests/test_analytics_classifier.py`
+  greps the module for the old tokens and goes red if one comes back.
+- `build == HEAD` on `/healthz` means HEAD of **`release`**, not main
+  (sync item 13). Render deploys `release`; only cd.yml's `deploy` job
+  writes it, fast-forward, after the CI matrix is green. `main` ahead of
+  `release` is an uncertified push pending — its CD run is red or still
+  running — never "drift" and never a reason to deploy by hand or to
+  write `release` yourself (a non-fast-forward push fails the next run
+  on purpose). Compare the wire against `git rev-parse origin/release`.
+  Until the owner flips this service's Branch field in the Render
+  dashboard, render.yaml's `branch: release` is documentation and the
+  host may still build from main — the discriminating observation is
+  the next push that goes red on main: `release` must not move and the
+  wire must not change.
