@@ -201,17 +201,24 @@ template default.
 NOT consumed; declaring them would publish measurements nobody took.
 Item 9 stays open.
 
-`ai_bots` is DELIBERATELY ABSENT even though item 15 has landed in the
-tree. The wall is retired here — `block_ai_training=False`, and
-in-process on the FastAPI lane ClaudeBot and GPTBot both get 200 on
-`/`, `/llms.txt` and `/healthz` with no `Disallow` in robots.txt
-(measured 2026-08-30). But the wire still serves the PRE-flip build:
-ClaudeBot and GPTBot both got 403 / 200 / 403 on those same three
-paths at 2026-08-30T14:17Z, build 49fc205, because nothing has been
-pushed. A fence that declared 200s would be describing a deploy that
-has not happened. It gains `ai_bots: {"/": 200, "/llms.txt": 200,
-"/healthz": 200}` on the first green run after the flip ships, re-measured
-on the wire, not copied from here.
+`ai_bots` is now DECLARED, and every number in it was measured on the
+wire rather than copied from the tree. The history, because the shape of
+this claim matters more than the claim:
+
+- 2026-08-30T14:17Z, build 49fc205, BEFORE the flip: ClaudeBot and
+  GPTBot both got 403 / 200 / 403 on `/`, `/llms.txt`, `/healthz`.
+- The fence stayed silent while item 15 sat unpushed in the tree, on
+  the rule that a fence describing a deploy that has not happened is
+  worse than a quiet one.
+- 2026-08-30T20:58Z, build d4bce44, AFTER: both UAs 200 / 200 / 200 on
+  the same three paths, and `/robots.txt` carries no training stanza at
+  all (with the wall retired the package emits none — absent and Allow
+  are both the allow shape).
+
+Every 403 this host ever served was its OWN middleware. There was no
+edge rule to undo; the owner confirmed the Cloudflare AI-bot feature is
+Enterprise-only on this plan. An earlier note in this repo's memory that
+blamed Cloudflare was wrong and is corrected.
 
 `deploy: release-branch` is the road of item 13: Render auto-deploys
 `release`, and only `.github/workflows/cd.yml`'s `deploy` job writes
@@ -220,5 +227,6 @@ green. `main` ahead of `release` is an uncertified push pending, not
 drift.
 
 ```yaml posture
+ai_bots: {"/": 200, "/llms.txt": 200, "/healthz": 200}
 deploy: release-branch
 ```
