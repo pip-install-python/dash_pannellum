@@ -96,4 +96,3 @@ def patch_renderer() -> None:
                         style={"maxWidth": "100%", "height": "auto"})
 
     m2d_renderer.DashRenderer.image = image
-
