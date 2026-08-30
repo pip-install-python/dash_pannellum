@@ -2,6 +2,8 @@
 name: Callback Hotspots
 description: Place clickable hotspots in a panorama that fire Dash callbacks with the hotspot name
 endpoint: /components/hotspots
+category: Interaction
+order: 1
 package: dash_pannellum
 icon: mdi:cursor-default-click-outline
 lastmod: 2026-06-15

@@ -1,9 +1,9 @@
 # Changelog
 
-## Unreleased — documentation site
+## Unreleased
 
-The `dash-pannellum` package is unchanged; everything here is
-pannellum.2plot.dev. (Site-only work has not been changelogged since
+**The documentation site.** The `dash-pannellum` package is unchanged;
+everything here is pannellum.2plot.dev. (Site-only work has not been changelogged since
 2.0.0; this section starts doing so, because the first entry below
 changes numbers the hub already publishes.)
 
@@ -22,6 +22,23 @@ changes numbers the hub already publishes.)
   had said for months six lines from where the list ignored it. The
   hub's day-over-day view will show a step. That is the number
   becoming true, not a regression.
+
+- **Training crawlers are allowed.** `block_ai_training=False`: robots.txt
+  no longer Disallows GPTBot, ClaudeBot or CCBot, and the package's
+  middleware stops answering 403 on the browser document and `/healthz`
+  for them. The wall decided by vendor CLASS what nobody could account
+  for; now every corpus read is a ledger row and the tool is per-vendor
+  policy — block or meter ONE vendor whose rows justify it, never the
+  class. Measured on this host before the flip: both UAs got 403 on `/`
+  and `/healthz`, 200 on `/llms.txt`. Every one of those 403s was this
+  app's own middleware; there is no edge rule.
+- **The top bar's GitHub icon pointed at a 404.** `GITHUB_URL` and the
+  header both spelled the repo `dash-pannellum`; it is `dash_pannellum`.
+  The dead spelling was also in the JSON-LD `codeRepository`, the
+  `llms-github-repo` meta tag and the home page. All fixed. `package.json`
+  still carries it — that is the package lane and needs a rebuild.
+- **The wordmark is `dash-pannellum`.** It still said "Dash Pannellum" —
+  the one surface the 2.0.0 identity pass missed.
 
 ### Added
 
@@ -43,6 +60,35 @@ changes numbers the hub already publishes.)
   which did not exist then, and answers a question the hub cannot —
   "does ClaudeBot actually get the corpus from THIS host?" Plain
   tables, no charts, no interval callback.
+- **The navigation contract.** The sidebar is built from one registry, not
+  a hand-edited list: Home · Changelog → the app's own sections from each
+  page's frontmatter `category:` + `order:` → API → Resources → Admin
+  (owner-only, absent from the tree for everyone else). `page_order` and
+  `excluded_links` are gone from `components/navbar.py`, which no longer
+  holds anything this fork edits. The sections are Getting started ·
+  Panoramas · Interaction.
+- **`/changelog`** — this file as a Timeline, and as its own `llms.txt`.
+- **Retired from the sidebar**: `pip-install-python.com` (the domain is
+  retired), `community.plotly.com`, and the pre-network "Other Apps I've
+  built" block (Plotly.pro, GeoMapIndex), which was hand-typed and had
+  drifted. Resources is now third-party only — `dmc` and Pannellum, the
+  upstream project this component wraps. The network is listed once, in
+  the top bar's Other Apps menu, generated from `lib/network_directory`.
+- **A footer** — © Pip Install Python LLC, the GitHub profile, Discord,
+  YouTube. Every icon labelled.
+- **Top bar**: a `v2.0.0` badge for the documented package, the Other Apps
+  menu, and search fed from the same registry the sidebar uses (so it can
+  never list an admin or hidden page).
+- **Accessibility**: the desktop Burger, the search field, the home link
+  and the code-block copy button all have accessible names. The audit
+  found each of them nameless.
+- **Mobile fit**: prop tables, code blocks, Timeline rows and long inline
+  code scroll or wrap inside their own box instead of dragging the whole
+  document sideways at phone width.
+- **`/admin/traffic`** gains a `dmc.DatePickerInput` (bounded by the
+  ledger's own days, with presets) in place of a `dcc.Dropdown`, and a
+  **People** section carrying the day's human numbers above the crawler
+  tables — humans never enter the read ledger, and the page now says so.
 - **`release` is the deploy branch.** Render auto-deploys `release`,
   and only CD's `deploy` job writes it: a fast-forward push of the
   run's own sha after the CI matrix is green. A push to `main` is a

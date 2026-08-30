@@ -2,6 +2,8 @@
 name: Camera Emotes
 description: A quick-sheet of directed camera motions — shake, knockdown, lunge — that make the 360° POV feel like a body, not a tripod
 endpoint: /components/emotes
+category: Interaction
+order: 2
 package: dash_pannellum
 icon: tabler:movie
 lastmod: 2026-06-15

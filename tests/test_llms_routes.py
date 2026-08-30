@@ -70,9 +70,9 @@ def test_robots_artifact_fingerprint(client):
 
     - 2.3.2: `OAI-SearchBot -> Allow` (ChatGPT search's crawler; pre-fix
       builds disallowed it).
-    - 2.3.3: `ClaudeBot -> Disallow` (the actual *training* crawler, moved to
-      the training bucket) while `Claude-User` and `Claude-SearchBot` — the
-      user-triggered and search fetchers — are allowed.
+    - 2.3.3: `Claude-User` and `Claude-SearchBot` — the user-triggered and
+      search fetchers — are allowed, distinct from ClaudeBot, which is
+      Anthropic's *training* crawler.
     """
     lines = client.get("/robots.txt").text.splitlines()
 
@@ -81,7 +81,18 @@ def test_robots_artifact_fingerprint(client):
         return lines[idx + 1]
 
     assert rule("OAI-SearchBot") == "Allow: /", "pre-2.3.2 artifact"
-    assert rule("ClaudeBot") == "Disallow: /", "pre-2.3.3 artifact"
+    # POSTURE, not artifact, since sync item 15 (the wall retired; training
+    # crawlers allowed by default): with block_ai_training=False the package
+    # emits NO training stanza at all — GPTBot and ClaudeBot fall under
+    # `User-agent: *` / Allow. So the pin is "no Disallow for them", absent
+    # or Allow both being the allow shape. FLIPPED, NOT DELETED: a fork whose
+    # posture fence declares ai_bots 403 by design asserts `Disallow: /` here
+    # instead and records the divergence.
+    for agent in ("ClaudeBot", "GPTBot"):
+        marker = f"User-agent: {agent}"
+        if marker in lines:
+            assert rule(agent) != "Disallow: /", \
+                f"{agent} still walled — the item 15 posture flip has not landed"
     assert rule("Claude-User") == "Allow: /", "pre-2.3.3 artifact"
     assert rule("Claude-SearchBot") == "Allow: /", "pre-2.3.3 artifact"
 

@@ -80,7 +80,7 @@ Play equirectangular video through video.js, with optional HLS/DASH HTTP streami
 
 ## Project links
 
-- **GitHub**: [pip-install-python/dash-pannellum](https://github.com/pip-install-python/dash-pannellum)
+- **GitHub**: [pip-install-python/dash_pannellum](https://github.com/pip-install-python/dash_pannellum)
 - **PyPI**: [dash-pannellum](https://pypi.org/project/dash-pannellum/)
 - **Pannellum**: [pannellum.org](https://pannellum.org/) — the underlying viewer
 - **Community**: [Dash Community Forum](https://community.plotly.com/)

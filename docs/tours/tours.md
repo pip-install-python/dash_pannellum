@@ -2,6 +2,8 @@
 name: Virtual Tours
 description: Build multi-scene 360° virtual tours with scene-switch hotspots and live camera state
 endpoint: /components/tours
+category: Panoramas
+order: 1
 package: dash_pannellum
 icon: mdi:map-marker-path
 lastmod: 2026-06-15

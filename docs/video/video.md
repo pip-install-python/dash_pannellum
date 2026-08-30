@@ -2,6 +2,8 @@
 name: 360° Video
 description: Play equirectangular 360° video through video.js, including HLS/DASH HTTP streaming
 endpoint: /components/video
+category: Panoramas
+order: 4
 package: dash_pannellum
 icon: mdi:video
 lastmod: 2026-08-02

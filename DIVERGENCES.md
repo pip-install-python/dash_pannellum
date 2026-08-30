@@ -104,6 +104,51 @@ prevent, not the fix.
    app key says which satellite printed it. Do not "fix" either
    direction.
 
+7. **`/api` is this repo's OWN documentation page, not the template's
+   generated one.** Template sync item 16 ships `pages/api.py`, which
+   registers `/api` from `API_PACKAGES` and renders a prop table from the
+   installed package's `metadata.json`. This repo has served `/api` since
+   before that item — `docs/api/api.md`, whose prop table is generated from
+   the SAME `metadata.json` by this repo's own `.. kwargs::` directive, plus
+   curated read-only and imperative prop semantics (which prop updates when,
+   which one acts on the live viewer) that a generated table cannot express.
+   Shipping both would be a duplicate `/api` registration, and the generated
+   one is strictly less. So `pages/api.py` is NOT in this tree.
+   `lib/api_reference.py` IS — byte-identical to the template's, unused by
+   the app, pinned by `tests/test_nav_contract.py` against the fixture
+   package so the next fan-out's cargo cannot rot here unseen.
+   `API_PACKAGES = ["dash_pannellum"]` stays set: the header's version badge
+   reads it, and it is the truthful declaration of what this site documents.
+   Consequence a sync must not "fix": the template's
+   `test_api_page_is_not_registered_when_no_package_is_declared` asserts
+   `API_PACKAGES == []` and can never hold on a component fork.
+
+8. **`pages/changelog.py` reads TWO changelog shapes.** The template's
+   parser takes Keep-a-Changelog `## [2.0.0] - 2026-08-02` with `- ` bullets
+   only. This repo's CHANGELOG uses `## 2.0.0 — 2026-08-02` and is
+   prose-first — the 2.0.0 entry is 63 lines of prose and zero bullets — so
+   the template's reader rendered every section heading with nothing under
+   it. The fix is in the parser, not the changelog: both heading shapes
+   (bracketed or bare, hyphen or em dash) and a `para` item type beside
+   `item`/`subitem`. It carries NO fork content and is offered back to the
+   template; muicharts has the same prose changelog. Until the template
+   takes it, this file is not byte-cargo here.
+
+9. **`SAME_AS` is two entries, not one.** The template sets
+   `SAME_AS = [GITHUB_URL]`. This repo IS a published package, so the PyPI
+   project joins the repo — the three-way loop (docs ↔ repo ↔ PyPI) is the
+   strongest statement of which URL is the package's canonical docs home.
+   The item's actual contract, that `GITHUB_URL` is the single source for
+   the repository, is kept.
+
+10. **`components/header.py` will never be byte-cargo here.** It carries
+    this site's brand mark (`mdi:panorama-sphere-outline`, teal `#12B886`),
+    its wordmark, and a `visibleFrom="sm"` breakpoint chosen because this
+    header's row is one control wider than the template's. Everything item
+    16 made uniform — the Other Apps menu, the version badge, the search
+    from `navbar.search_data`, `aria-label`s, the GitHub icon reading
+    `GITHUB_URL` — is ported into it verbatim.
+
 ## Byte-owned paths
 
 Paths this fork owns byte-for-byte. The F3b fan-out never overwrites
@@ -135,11 +180,21 @@ The hub reads this fence instead of its own seeded table (template
 value is meant to be visibly wrong, and an omitted key reads as the
 template default.
 
-Only `deploy` is declared today. `ai_bots`, `healthz` and `runtime`
-belong to template item 9, which this fork has NOT consumed — the
-sync drop that produced this fence was scoped to items 12 and 13.
-Declaring them would mean publishing three measurements nobody in
-this session took; the honest state is silence. Item 9 stays open.
+`healthz` and `runtime` belong to template item 9, which this fork has
+NOT consumed; declaring them would publish measurements nobody took.
+Item 9 stays open.
+
+`ai_bots` is DELIBERATELY ABSENT even though item 15 has landed in the
+tree. The wall is retired here — `block_ai_training=False`, and
+in-process on the FastAPI lane ClaudeBot and GPTBot both get 200 on
+`/`, `/llms.txt` and `/healthz` with no `Disallow` in robots.txt
+(measured 2026-08-30). But the wire still serves the PRE-flip build:
+ClaudeBot and GPTBot both got 403 / 200 / 403 on those same three
+paths at 2026-08-30T14:17Z, build 49fc205, because nothing has been
+pushed. A fence that declared 200s would be describing a deploy that
+has not happened. It gains `ai_bots: {"/": 200, "/llms.txt": 200,
+"/healthz": 200}` on the first green run after the flip ships, re-measured
+on the wire, not copied from here.
 
 `deploy: release-branch` is the road of item 13: Render auto-deploys
 `release`, and only `.github/workflows/cd.yml`'s `deploy` job writes

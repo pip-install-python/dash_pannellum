@@ -2,6 +2,8 @@
 name: Getting Started
 description: Install Dash Pannellum and embed your first interactive 360° panorama in a Dash app
 endpoint: /getting-started
+category: Getting started
+order: 1
 package: dash_pannellum
 icon: mdi:rocket-launch-outline
 lastmod: 2026-08-16

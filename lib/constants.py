@@ -49,6 +49,12 @@ APP_TITLE = SITE_BRAND
 # otherwise run past every platform's truncation point.
 SITE_SHORT_NAME = "dash-pannellum"
 
+# The top bar's wordmark. It is SITE_SHORT_NAME and not "Dash Pannellum":
+# the 2.0.0 identity pass made the PACKAGE NAME the brand on every surface
+# ("a name that matches no installable package" is what it retired), and
+# the header was the one surface it missed. Fixed with sync item 16.
+WORDMARK = SITE_SHORT_NAME
+
 # Prefixed to every per-page title (`pages/markdown.py`, `pages/home.py`), and
 # therefore NOT only a browser-tab string: Dash passes the page title straight
 # into `og:title` and `twitter:title` (dash/_pages.py `_page_meta_tags`), so
@@ -65,7 +71,14 @@ PRIMARY_COLOR = "teal"
 # Keep in step with pyproject.toml and package.json when cutting a release.
 APP_VERSION = "0.4.1"
 
-GITHUB_URL = "https://github.com/pip-install-python/dash-pannellum"
+# ONE constant for the repository. The header's GitHub icon, the Resources
+# block and JSON-LD `sameAs` all read it (sync item 16): a fork sets it once.
+# NOTE the UNDERSCORE — github.com/pip-install-python/dash_pannellum is the
+# real repo (it is what `git remote` says and what SAME_AS has always used).
+# The hyphenated spelling that stood here, and in the header's icon href,
+# 404s; measured 2026-08-30. The PyPI project is `dash-pannellum` with a
+# hyphen, which is where the confusion came from — the two genuinely differ.
+GITHUB_URL = "https://github.com/pip-install-python/dash_pannellum"
 
 # ---------------------------------------------------------------------------
 # The network's internal-traffic contract
@@ -157,10 +170,62 @@ OG_IMAGE_ALT = SITE_BRAND
 # project joins the repo here — the boilerplate lists only a repo because
 # nobody pip-installs a template.
 PUBLISHER = "Pip Install Python LLC"
-SAME_AS = [
-    "https://github.com/pip-install-python/dash_pannellum",
-    "https://pypi.org/project/dash-pannellum/",
+PYPI_URL = "https://pypi.org/project/dash-pannellum/"
+# DIVERGENCE from the template's `SAME_AS = [GITHUB_URL]`: this repo IS a
+# published package, so the PyPI project joins the repo here. The item's
+# contract — GITHUB_URL is the single source for the repository — is kept;
+# the list is one entry longer. The boilerplate names only a repo because
+# nobody pip-installs a template.
+SAME_AS = [GITHUB_URL, PYPI_URL]
+
+# ---------------------------------------------------------------------------
+# Navigation contract (sync item 16) — the parts of the sidebar/top bar that
+# are IDENTICAL on every host come from template code and these constants;
+# the app's own sections come from frontmatter. A fork edits THIS block and
+# its docs' frontmatter, never components/navbar.py.
+# ---------------------------------------------------------------------------
+
+# The app's own sections, in sidebar order. Every docs page declares
+# `category:` in its frontmatter; categories not listed here follow the
+# listed ones, alphabetically. Keep names short — they are sidebar titles.
+CATEGORY_ORDER = [
+    "Getting started",
+    "Panoramas",
+    "Interaction",
 ]
+
+# Network-wide community links — identical on every host.
+DISCORD_URL = "https://discord.gg/e5s5uHWUHH"
+YOUTUBE_URL = "https://www.youtube.com/@2plotai"
+YOUTUBE_SUBSCRIBE_URL = YOUTUBE_URL + "?sub_confirmation=1"
+DMC_URL = "https://www.dash-mantine-components.com/"
+
+# The upstream project this component wraps. dash-pannellum is a Dash
+# wrapper around Pannellum, the plug-in-free WebGL panorama viewer — the
+# thing a reader of these docs most often needs next.
+UPSTREAM = {"name": "Pannellum", "url": "https://pannellum.org/",
+            "icon": "mdi:panorama-sphere"}
+
+# Dash component packages whose props the generated /api page documents.
+# The version badge in the header reads the first entry's __version__.
+API_PACKAGES: list = ["dash_pannellum"]
+
+# The owner's profile — the FOOTER's GitHub link (the repo is the top bar's).
+GITHUB_PROFILE_URL = "https://github.com/pip-install-python"
+
+
+def resources() -> list:
+    """The sidebar's Resources section: THIRD-PARTY ONLY (owner, 2026-08-30).
+    `dmc` and, when a fork declares it, the upstream project. The owner's
+    own links (repo, Discord, YouTube) live in the top bar and the footer,
+    never here; no community.plotly.com; no pip-install-python.com."""
+    items = [
+        {"label": "dmc", "url": DMC_URL, "icon": "ic:baseline-design-services"},
+    ]
+    if UPSTREAM:
+        items.append({"label": UPSTREAM["name"], "url": UPSTREAM["url"],
+                      "icon": UPSTREAM.get("icon", "mdi:open-in-new")})
+    return items
 
 
 def require_owned_base_url(base_url: str = BASE_URL) -> None:

@@ -2,6 +2,8 @@
 name: Gyro Look-Around
 description: Steer the 360° camera with the device's gyroscope — orientation props, the iOS permission dance, and a desktop tilt simulator
 endpoint: /components/gyro
+category: Interaction
+order: 3
 package: dash_pannellum
 icon: mdi:rotate-3d-variant
 lastmod: 2026-06-15

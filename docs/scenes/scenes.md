@@ -2,6 +2,8 @@
 name: Scene Configuration
 description: Every Pannellum scene option passes through the tour prop — plus the lookAt fly-to pattern for event-driven camera moves
 endpoint: /components/scenes
+category: Panoramas
+order: 2
 package: dash_pannellum
 icon: tabler:adjustments-alt
 lastmod: 2026-06-15

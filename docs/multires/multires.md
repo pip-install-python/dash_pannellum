@@ -2,6 +2,8 @@
 name: Multi-Resolution
 description: Stream gigapixel panoramas progressively with Pannellum's tiled multires format
 endpoint: /components/multires
+category: Panoramas
+order: 3
 package: dash_pannellum
 icon: mdi:grid-large
 lastmod: 2026-06-15

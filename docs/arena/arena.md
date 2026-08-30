@@ -2,6 +2,8 @@
 name: Joystick Arena
 description: Drive a 360° petri-dish arena with DashRCJoystick — floor tilesets composed into data-URI panoramas, steered through the 0.2.0 imperative camera
 endpoint: /components/arena
+category: Interaction
+order: 4
 package: dash_pannellum
 icon: mdi:gamepad-variant
 lastmod: 2026-08-02

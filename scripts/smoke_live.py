@@ -334,9 +334,9 @@ def main(base: str) -> int:
     )
     # The artifact fingerprint. pip metadata is invisible from outside, so
     # these robots.txt pairs are how a live host is proven to run the intended
-    # dash-improve-my-llms: 2.3.2 allowed OAI-SearchBot; 2.3.3 moved ClaudeBot
-    # (the training crawler) to Disallow while allowing the user-triggered and
-    # search fetchers Claude-User / Claude-SearchBot.
+    # dash-improve-my-llms: 2.3.2 allowed OAI-SearchBot; 2.3.3 split the
+    # user-triggered and search fetchers Claude-User / Claude-SearchBot from
+    # ClaudeBot, which is the training crawler.
     robots_lines = robots.splitlines()
 
     def robots_rule(agent: str) -> str:
@@ -349,7 +349,6 @@ def main(base: str) -> int:
 
     for agent, expected, since in (
         ("OAI-SearchBot", "Allow: /", "2.3.2"),
-        ("ClaudeBot", "Disallow: /", "2.3.3"),
         ("Claude-User", "Allow: /", "2.3.3"),
         ("Claude-SearchBot", "Allow: /", "2.3.3"),
     ):
@@ -358,6 +357,16 @@ def main(base: str) -> int:
             f"/robots.txt {agent} -> {expected.split(':')[0]} ({since} artifact fingerprint)",
             got == expected,
             f"got {got}: this host runs a pre-{since} artifact",
+        )
+    # Posture, not artifact (sync item 15): with the wall retired the package
+    # emits no training stanza at all, so absent AND Allow are both the allow
+    # shape. Only an explicit Disallow is a failure.
+    for agent in ("ClaudeBot", "GPTBot"):
+        got = robots_rule(agent)
+        check(
+            f"/robots.txt {agent} not walled (item 15 posture)",
+            got != "Disallow: /",
+            f"got {got}: the posture flip has not reached this host",
         )
 
     status, sitemap, _ = fetch(f"{base}/sitemap.xml")
