@@ -146,3 +146,35 @@ def test_network_smoke_urlopens_pass_the_ssl_context():
         f"urlopen without context=SSL_CONTEXT in network_smoke.py: {naked} — "
         "on macOS this dies in the handshake and reads as a dead host"
     )
+
+
+def test_the_batterys_default_ua_is_browser_lane_and_still_internal():
+    """Sync item 17 (muischeduler's finding): at dimll >= 2.8 a UA without a
+    browser engine token is crawler-lane, so a default-UA check reads the
+    crawler document. The default names the browser lane FIRST and keeps
+    the internal token (a substring match) so the tracker still drops it;
+    CRAWLER_UA stays the other lane."""
+    from dash_improve_my_llms import classify
+
+    from lib.constants import INTERNAL_UA_TOKEN
+    from scripts import network_smoke as ns
+
+    assert classify(ns.UA)["lane"] == "browser"
+    assert ns.UA.startswith("Mozilla/5.0") and "AppleWebKit" in ns.UA
+    assert INTERNAL_UA_TOKEN in ns.UA and ns.UA.endswith("network-smoke")
+    assert classify(ns.CRAWLER_UA)["lane"] == "crawler"
+    assert INTERNAL_UA_TOKEN in ns.CRAWLER_UA
+
+
+def test_smoke_live_default_ua_is_browser_lane_too():
+    """Item 17 says AUDIT the other tool rather than assume it. This host's
+    scripts/smoke_live.py already had the right shape — engine token first,
+    internal token after — and this pin is what keeps it that way."""
+    from dash_improve_my_llms import classify
+
+    from lib.constants import INTERNAL_UA_TOKEN
+    from scripts import smoke_live as sl
+
+    assert classify(sl.BROWSER_UA)["lane"] == "browser"
+    assert INTERNAL_UA_TOKEN in sl.BROWSER_UA
+    assert classify(sl.CRAWLER_UA)["lane"] == "crawler"
