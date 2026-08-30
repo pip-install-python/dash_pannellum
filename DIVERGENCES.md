@@ -149,6 +149,23 @@ prevent, not the fix.
     from `navbar.search_data`, `aria-label`s, the GitHub icon reading
     `GITHUB_URL` — is ported into it verbatim.
 
+11. **`scripts/network_smoke.HIDDEN_DOC_PATHS` is a CENSUS here, not the
+    template's canary, and it no longer names `/analytics/llms.txt`.** The
+    template ships no hidden pages, so its list is two placeholder paths
+    proving `mark_hidden` still works. This host has two real ones, so the
+    list is every hidden page's llms.txt twin:
+    `/admin/control-board/llms.txt` and `/admin/traffic/llms.txt`, plus
+    `/admin/llms.txt` kept as the prefix canary.
+    `/analytics/llms.txt` is REMOVED: the page it named was deleted in
+    **ac6c33f** (2026-08-02, "Remove the local /analytics/traffic dashboard
+    — traffic accounting lives on the hub"), so for four weeks the check
+    passed because nothing was there, not because anything was hidden.
+    `tests/test_network_smoke.py` now enforces the rule in both directions
+    — every `mark_hidden` page must have its twin in the list, and no
+    swept path may name a page that is gone — so neither half can rot by
+    prose again. The ops seat says the template will derive this list from
+    the registry later; when it does, this divergence retires.
+
 ## Byte-owned paths
 
 Paths this fork owns byte-for-byte. The F3b fan-out never overwrites

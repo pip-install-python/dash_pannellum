@@ -89,13 +89,28 @@ SITE_H1 = "# dash-pannellum — 360° panoramas for Dash"
 DEFAULT_BASE_URL = "http://localhost:8561"
 
 # Owner-only surfaces that must 404 their llms.txt to an anonymous reader.
-# This template ships no hidden pages, so the list is a canary rather than a
-# census: `/admin` is what a fork will add first, and `mark_hidden("/admin")`
-# has to keep working. A fork adds its own paths here in the same change that
-# marks them hidden.
+# On THIS host it is a census, not the template's canary: every path below
+# is a page some module passes to `mark_hidden`, and the rule is that a page
+# joins this list in the same change that hides it.
+#
+# `/analytics/llms.txt` was here until 2026-08-30 and is gone: the page it
+# named was deleted in ac6c33f (2026-08-02, "Remove the local
+# /analytics/traffic dashboard"), so the check had been passing vacuously
+# for four weeks — a 404 because nothing is there, not because anything is
+# hidden. `/admin/llms.txt` stays: it is the prefix canary, and nothing
+# registers that exact path either, so it proves the same thing the
+# template's copy proves.
+#
+# Measured across every lane on 2026-08-30 (bare, curl, the battery's old
+# crawler-lane default, its new browser-lane default, plain Chrome and
+# CRAWLER_UA): all four are 404 in all six. The two PAGES are a different
+# story on purpose — /admin/control-board and /admin/traffic answer 200 to
+# a browser with a fail-closed card, and 404 to a crawler. It is the llms.txt
+# twins that must be silent to everyone, which is what this pins.
 HIDDEN_DOC_PATHS = (
     "/admin/llms.txt",
-    "/analytics/llms.txt",
+    "/admin/control-board/llms.txt",
+    "/admin/traffic/llms.txt",
 )
 
 # The hub one level up the chain. A satellite's llms.txt must name it — that
