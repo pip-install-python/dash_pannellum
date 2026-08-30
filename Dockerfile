@@ -57,6 +57,13 @@ RUN pip install --no-cache-dir .
 # the working tree while the container only holds what is COPY'd; the
 # container-boot CI job exists to catch exactly this.
 COPY run.py ./
+# CHANGELOG.md is CONTENT here, not repo furniture: pages/changelog.py reads
+# it at render time for /changelog and for that page's llms.txt. Omitted from
+# this list it is simply absent in the container, and the page renders
+# "CHANGELOG.md could not be found or parsed" while every test passes from
+# the working tree — the exact failure this list's comment predicted, and it
+# happened (2026-08-30, first deploy of the nav contract).
+COPY CHANGELOG.md ./
 COPY templates ./templates
 COPY assets ./assets
 COPY components ./components

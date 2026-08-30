@@ -294,6 +294,27 @@ def satellite_checks(base: str) -> None:
             status, _, _ = get(path)
             expect(status == 404, f"{path} {status} (owner surface leaked)")
 
+    def changelog_page_has_content():
+        # A page that reads a FILE at render time is only as deployed as the
+        # file: the Dockerfile here is an explicit COPY list, and CHANGELOG.md
+        # was missing from it, so /changelog served "could not be found or
+        # parsed" for a whole release while every test passed from the working
+        # tree (2026-08-30). This runs against the CONTAINER in CI and against
+        # production in CD, which are the two places that can see it.
+        # Skipped where the fork has no /changelog.
+        status, _, _ = get("/changelog")
+        if status == 404:
+            return
+        expect(status == 200, f"/changelog {status}")
+        status, _, text = get("/changelog/llms.txt")
+        expect(status == 200, f"/changelog/llms.txt {status}")
+        expect("could not be found or parsed" not in text,
+               "/changelog rendered its empty-state — the changelog file is "
+               "not in the deployed artifact")
+        # The preamble alone is ~550 bytes; a real changelog body is far more.
+        expect(len(text) > 1500,
+               f"/changelog/llms.txt is {len(text)}B — preamble only, no releases")
+
     def robots_artifact_fingerprint():
         # pip metadata is invisible from outside, so the robots.txt crawler
         # split is how a live host is proven to run the intended package:
@@ -370,6 +391,7 @@ def satellite_checks(base: str) -> None:
         ("llms_txt_names_the_hub", llms_txt_names_the_hub),
         ("page_llms_nav", page_llms_nav),
         ("hidden_pages_404", hidden_pages_404),
+        ("changelog_page_has_content", changelog_page_has_content),
         ("robots_artifact_fingerprint", robots_artifact_fingerprint),
         ("sitemap_absolute_and_on_this_host", sitemap_absolute_and_on_this_host),
         ("crawler_gets_prose", crawler_gets_prose),
