@@ -149,7 +149,19 @@ prevent, not the fix.
     from `navbar.search_data`, `aria-label`s, the GitHub icon reading
     `GITHUB_URL` — is ported into it verbatim.
 
-11. **`scripts/network_smoke.HIDDEN_DOC_PATHS` is a CENSUS here, not the
+11. **RETIRED 2026-08-31 by sync item 18, exactly as this entry's own
+    clause said it would be.** The template now derives the hidden-path
+    set from the registry and asserts EQUALITY
+    (`tests/test_nav_contract.py::test_hidden_doc_paths_match_the_registered_admin_pages`),
+    which subsumes both directions this fork had been pinning by hand, so
+    the two bespoke tests and the `/admin/llms.txt` canary are gone and
+    `HIDDEN_DOC_PATHS` is now exactly the admin pages' llms.txt twins.
+    Kept as a record of what the entry was, because the removal of
+    `/analytics/llms.txt` still matters: its page was deleted in
+    **ac6c33f** (2026-08-02) and the check had passed vacuously for four
+    weeks. Historical text follows.
+
+    *(was)* **`scripts/network_smoke.HIDDEN_DOC_PATHS` is a CENSUS here, not the
     template's canary, and it no longer names `/analytics/llms.txt`.** The
     template ships no hidden pages, so its list is two placeholder paths
     proving `mark_hidden` still works. This host has two real ones, so the
@@ -165,6 +177,30 @@ prevent, not the fix.
     swept path may name a page that is gone — so neither half can rot by
     prose again. The ops seat says the template will derive this list from
     the registry later; when it does, this divergence retires.
+
+12. **`components/header.py`'s identity constants name an ICON, not an
+    image.** Item 18's `LOGO_ASSET` seam moves header identity out of the
+    component and into `lib/constants.py`; the template's constant is an
+    image filename (`LOGO_ASSET = "ddb.png"`). This site's mark is an
+    Iconify glyph, so the constants are `LOGO_ICON` / `LOGO_WIDTH` /
+    `WORDMARK_COLOR` / `WORDMARK_VISIBLE_FROM` and there is no asset to
+    ship. The CONTRACT is met exactly — `grep -c "12B886\|panorama-sphere"
+    components/header.py` is 0, the component holds no identity of its
+    own — and `WORDMARK_VISIBLE_FROM` is `sm` rather than the template's
+    `xs` for the reason recorded at item 16: this header's row is one
+    control wider.
+
+13. **`scripts/audit_links.py` is a fork tool the template does not carry,
+    and it had item 18's THIRD-LANE defect.** It drove a bare
+    `.test_client()` — `Werkzeug/x.y`, the crawler lane at dimll >= 2.8 —
+    over every registered page, so both `mark_hidden` admin pages 404'd to
+    it and were reported as broken internal links. Fixed with a named
+    browser-lane UA carrying the internal token (`CLIENT_UA`), and the
+    crawler-lane 404 assertion landed in the SAME change per the item's
+    rule that repairing the lane alone measures strictly less. The same
+    pass fixed a second inherited defect: its `own_tree` pattern still
+    named `Dash-Documentation-Boilerplate`, so the "unpushed" link
+    classification had never matched anything in this repo.
 
 ## Byte-owned paths
 

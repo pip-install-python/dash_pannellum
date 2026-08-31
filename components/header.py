@@ -5,7 +5,16 @@ from dash_iconify import DashIconify
 from components.backend_badge import create_backend_badge
 from components.navbar import search_data
 from lib.backend import get_backend_info
-from lib.constants import API_PACKAGES, BASE_URL, GITHUB_URL, WORDMARK
+from lib.constants import (
+    API_PACKAGES,
+    BASE_URL,
+    GITHUB_URL,
+    LOGO_ICON,
+    LOGO_WIDTH,
+    WORDMARK,
+    WORDMARK_COLOR,
+    WORDMARK_VISIBLE_FROM,
+)
 
 
 def create_clerk_avatar():
@@ -221,15 +230,15 @@ def create_header(data):
                             dmc.Group(
                                 [
                                     DashIconify(
-                                        icon="mdi:panorama-sphere-outline",
-                                        width=34,
-                                        color="#12B886",
+                                        icon=LOGO_ICON,
+                                        width=LOGO_WIDTH,
+                                        color=WORDMARK_COLOR,
                                     ),
                                     dmc.Text(
                                         WORDMARK,
                                         size="lg",
                                         fw=700,
-                                        c="#12B886",
+                                        c=WORDMARK_COLOR,
                                         id="dash-docs-title",
                                         # Phones show the hamburger, the logo
                                         # mark, GitHub, the theme toggle and
@@ -241,7 +250,7 @@ def create_header(data):
                                         # The element stays in the DOM, so
                                         # assets/text_animation.js still finds
                                         # it by id.
-                                        visibleFrom="sm",
+                                        visibleFrom=WORDMARK_VISIBLE_FROM,
                                     ),
                                 ],
                                 gap="sm",

@@ -88,27 +88,19 @@ SITE_H1 = "# dash-pannellum — 360° panoramas for Dash"
 # The container port. Matches the Dockerfile's EXPOSE and CMD.
 DEFAULT_BASE_URL = "http://localhost:8561"
 
-# Owner-only surfaces that must 404 their llms.txt to an anonymous reader.
-# On THIS host it is a census, not the template's canary: every path below
-# is a page some module passes to `mark_hidden`, and the rule is that a page
-# joins this list in the same change that hides it.
+# Owner-only surfaces that must 404 their llms.txt to an anonymous reader:
+# the llms.txt twin of every page this host passes to `mark_hidden`, and
+# nothing else. `tests/test_nav_contract.py` derives the same set from the
+# registry and asserts EQUALITY, so a new admin page fails there rather than
+# going unmeasured on the wire, and a stale entry fails too.
 #
-# `/analytics/llms.txt` was here until 2026-08-30 and is gone: the page it
-# named was deleted in ac6c33f (2026-08-02, "Remove the local
-# /analytics/traffic dashboard"), so the check had been passing vacuously
-# for four weeks — a 404 because nothing is there, not because anything is
-# hidden. `/admin/llms.txt` stays: it is the prefix canary, and nothing
-# registers that exact path either, so it proves the same thing the
-# template's copy proves.
-#
-# Measured across every lane on 2026-08-30 (bare, curl, the battery's old
-# crawler-lane default, its new browser-lane default, plain Chrome and
-# CRAWLER_UA): all four are 404 in all six. The two PAGES are a different
-# story on purpose — /admin/control-board and /admin/traffic answer 200 to
-# a browser with a fail-closed card, and 404 to a crawler. It is the llms.txt
-# twins that must be silent to everyone, which is what this pins.
+# History worth keeping: this list carried `/analytics/llms.txt` until
+# 2026-08-30 (page deleted in ac6c33f, so the check passed because nothing
+# was there) and a bare `/admin/llms.txt` canary from the template, which
+# tested Dash's 404 rather than mark_hidden. The registry-derived pin
+# replaces both, which is exactly the retirement this fork's DIVERGENCES 11
+# said it was waiting for.
 HIDDEN_DOC_PATHS = (
-    "/admin/llms.txt",
     "/admin/control-board/llms.txt",
     "/admin/traffic/llms.txt",
 )

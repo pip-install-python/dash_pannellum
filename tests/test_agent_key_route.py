@@ -10,6 +10,8 @@ from __future__ import annotations
 import flask
 import pytest
 
+from conftest import BROWSER_UA
+
 from lib import agent_key
 
 NO_STORE = "private, no-store"
@@ -22,9 +24,20 @@ class _App:
 
 @pytest.fixture
 def route_client():
+    """A bare Flask app carrying ONLY the agent-key route.
+
+    The UA below is not load-bearing here — this app has no
+    dash-improve-my-llms middleware, so nothing on it classifies a lane and
+    /api/agent-key answers the same to any client. It is named anyway
+    because the fleet pin (sync item 18, notes 70/74) greps every
+    `.test_client()` for a named UA, and an exception carved for "this one
+    is a stub" is how the next stub that ISN'T one gets missed.
+    """
     server = flask.Flask(__name__)
     agent_key.register_agent_key_route(_App(server), "flask")
-    return server.test_client()
+    client = server.test_client()
+    client.environ_base["HTTP_USER_AGENT"] = BROWSER_UA
+    return client
 
 
 def test_anonymous_gets_204_with_no_store(route_client):

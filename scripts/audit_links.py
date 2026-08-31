@@ -102,6 +102,21 @@ except Exception:  # pragma: no cover — running outside a checkout
 
 AUDIT_UA = f"Mozilla/5.0 (compatible; link-audit/1.0) {_INTERNAL_UA}"
 
+# The IN-PROCESS client's UA, and it is a different problem from AUDIT_UA
+# above (notes 70/74, sync item 18's third lane). A bare `.test_client()`
+# sends `Werkzeug/x.y`, which dash-improve-my-llms >= 2.8 classifies as the
+# CRAWLER lane — so every mark_hidden page correctly 404s and this audit
+# reports its own admin pages as broken internal links. The engine token
+# comes FIRST so the lane is `browser`; the internal token stays IN the
+# string (a substring match) so the tracker still drops the sweep rather
+# than filing it as N desktop humans.
+CLIENT_UA = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 "
+    + _INTERNAL_UA + " link-audit"
+)
+CLIENT_HEADERS = {"User-Agent": CLIENT_UA}
+
 
 def check_external(url: str, cache: Dict[str, int], _retrying: bool = False) -> int:
     if url in cache:
@@ -167,14 +182,18 @@ def main() -> int:
     # Links into this repo's own GitHub tree 404 until the branch is pushed.
     # That is a publishing state, not a broken link, and conflating the two
     # means every newly added file shows up as a defect until release.
+    # THIS repo, not the template's. The pattern said
+    # `Dash-Documentation-Boilerplate` — inherited at fork time — so the
+    # "unpushed" classification never matched a single link here and every
+    # link into this repo's own tree was audited as a plain external URL.
     own_tree = re.compile(
-        r"^https://github\.com/[^/]+/Dash-Documentation-Boilerplate/blob/[^/]+/(.+)$"
+        r"^https://github\.com/[^/]+/dash_pannellum/blob/[^/]+/(.+)$"
     )
     external_cache: Dict[str, int] = {}
     total = 0
 
     for page, doc_url in docs:
-        response = client.get(doc_url)
+        response = client.get(doc_url, headers=CLIENT_HEADERS)
         if response.status_code != 200:
             findings["internal"].append((doc_url, doc_url, f"document itself {response.status_code}"))
             continue
@@ -202,14 +221,14 @@ def main() -> int:
                 if not path.startswith("/"):
                     findings["internal"].append((page, target, "relative path, ambiguous in llms.txt"))
                     continue
-                probe = client.get(path)
+                probe = client.get(path, headers=CLIENT_HEADERS)
                 if probe.status_code != 200:
                     findings["internal"].append((page, target, f"HTTP {probe.status_code}"))
                 continue
 
             host = parsed.netloc
             if host == base_host:
-                probe = client.get(parsed.path or "/")
+                probe = client.get(parsed.path or "/", headers=CLIENT_HEADERS)
                 status = "resolves once deployed" if probe.status_code == 200 else f"HTTP {probe.status_code} even locally"
                 findings["self-host"].append((page, target, status))
             elif host in network_hosts:

@@ -55,6 +55,21 @@ SITE_SHORT_NAME = "dash-pannellum"
 # the header was the one surface it missed. Fixed with sync item 16.
 WORDMARK = SITE_SHORT_NAME
 
+# The header's identity, out of components/header.py (sync item 18's
+# LOGO_ASSET seam, ported into this tree's shape). The template names an
+# IMAGE file (`LOGO_ASSET = "ddb.png"`); this site's mark is an Iconify
+# glyph, so the constant is the icon name and there is no asset to ship.
+# The contract is the same and it is the point of the seam: the header
+# holds no identity of its own, a fork changes these four lines.
+LOGO_ICON = "mdi:panorama-sphere-outline"
+LOGO_WIDTH = 34
+WORDMARK_COLOR = "#12B886"
+# `sm`, not the template's `xs`: this header's row carries one control more
+# than the template's, and the wordmark is what pushes it past a phone's
+# edge. visibleFrom REMOVES the node from the accessibility tree, which is
+# why the home link carries its own aria-label (item 16, muicharts' note).
+WORDMARK_VISIBLE_FROM = "sm"
+
 # Prefixed to every per-page title (`pages/markdown.py`, `pages/home.py`), and
 # therefore NOT only a browser-tab string: Dash passes the page title straight
 # into `og:title` and `twitter:title` (dash/_pages.py `_page_meta_tags`), so

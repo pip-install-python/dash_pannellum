@@ -39,6 +39,10 @@ class Meta(BaseModel):
     category: Optional[str] = None
     # Sidebar position within its category (sync item 16); ties break on name.
     order: int = 1000
+    # A SHORT sidebar label where the page's full name is too long for the
+    # column (sync item 18). Absent means the name is already short enough,
+    # which is the case for every page on this host today.
+    nav: Optional[str] = None
     icon: Optional[str] = None
     # Who may read this page: public | auth | admin | hidden. Absent means
     # the deployment default (PAGE_DEFAULT_TIER, else public) — see
@@ -217,6 +221,7 @@ for file in files:
         ),
         category=metadata.category,
         order=metadata.order,
+        nav=metadata.nav,
         icon=metadata.icon,
         # Without this Dash infers an image from assets/ by reaching for
         # `logo.<ext>` — an SVG, which every social scraper rejects — and emits

@@ -55,6 +55,21 @@ def _build_llms_doc() -> str:
 LLMS_DOC = _build_llms_doc()
 
 
+def newest_date(path: Path = CHANGELOG_PATH) -> str | None:
+    """The newest dated release heading — /changelog's sitemap lastmod. It
+    moves exactly when the content moves (a release is dated by hand)."""
+    dates = [v["date"] for v in parse_changelog(path) if v.get("date")]
+    return max(dates) if dates else None
+
+
+def _is_version(label: str) -> bool:
+    """`2.0.0` yes, `Unreleased` no. This host's changelog opens with an
+    `## Unreleased` section, and the badge rendered it as "vUnreleased"
+    until sync item 18 — browser-lane only, so the machine checks never
+    saw it (the crawler document is the markdown, not the Timeline)."""
+    return bool(re.fullmatch(r"\d+(\.\d+)*", label))
+
+
 def parse_changelog(path: Path = CHANGELOG_PATH) -> list[dict]:
     """``[{version, date, sections: {name: [items]}}]`` in file order."""
     if not path.exists():
@@ -186,7 +201,8 @@ def _version_item(v: dict, is_current: bool):
         bullet=dmc.ThemeIcon(DashIconify(icon="tabler:rocket", width=16),
                              variant="filled" if is_current else "light", size=28, radius="xl"),
         title=dmc.Group(
-            [dmc.Badge(f"v{v['version']}", variant="filled" if is_current else "light", size="lg"),
+            [dmc.Badge(f"v{v['version']}" if _is_version(v["version"]) else v["version"],
+                       variant="filled" if is_current else "light", size="lg"),
              dmc.Text(v["date"], size="sm", c="dimmed") if v["date"] else None,
              dmc.Badge("Current", color="green", variant="outline", size="sm") if is_current else None],
             gap="sm"),
@@ -227,3 +243,29 @@ def layout(**kwargs):
         size="md",
         py="xl",
     )
+
+
+# The full machine record (sync item 18; leaflet's finding): a module-level
+# LLMS_DOC alone leaves the package to discover the page with NO `lastmod`,
+# so /changelog entered the sitemap undated — measured on this host's wire
+# 2026-08-31, `<lastmod>` ABSENT for /changelog while every docs page had
+# one. lastmod = the newest dated release heading, so it moves exactly when
+# the content moves. Same two registrations pages/markdown.py makes for
+# every docs page, so the control board can see this page too.
+from dash_improve_my_llms import register_page_metadata  # noqa: E402
+
+from lib import page_tiers, page_visibility  # noqa: E402
+
+page_visibility.register_default("/changelog", "Changelog",
+                                 visibility="public", llms_public=True)
+page_tiers.register("/changelog", "public", llms_public=True)
+register_page_metadata(
+    path="/changelog",
+    name="Changelog",
+    description=f"Version history of {SITE_SHORT_NAME}, rendered from CHANGELOG.md.",
+    title=PAGE_TITLE_PREFIX + "Changelog",
+    image_url=OG_IMAGE_URL,
+    schema_type="TechArticle",
+    lastmod=newest_date(),
+    llms_doc=LLMS_DOC,
+)

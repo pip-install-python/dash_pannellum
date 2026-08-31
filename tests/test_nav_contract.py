@@ -356,3 +356,77 @@ def test_other_apps_dropdown_is_solid_and_every_primary_app_has_an_icon(app_modu
     assert dropdown.styles["dropdown"]["backgroundColor"]
     for url in PRIMARY:
         assert ICONS.get(url) not in (None, "mdi:web"), f"{url} has no icon"
+
+
+def test_hidden_doc_paths_match_the_registered_admin_pages(app_module):
+    """Sync item 18: the battery's hidden-path list is DERIVED, not typed.
+
+    Equality both ways — a new admin page that never joins the list goes
+    unmeasured on the wire, and a stale entry passes because its page is
+    gone rather than because anything is hidden. This host had both faults
+    at once (DIVERGENCES 11, now retired by this pin).
+    """
+    import dash
+
+    from scripts.network_smoke import HIDDEN_DOC_PATHS
+
+    admin = {p["path"] for p in dash.page_registry.values()
+             if p["path"].startswith("/admin/")}
+    assert admin, "no admin pages registered — this pin would be vacuous"
+    assert set(HIDDEN_DOC_PATHS) == {f"{p}/llms.txt" for p in admin}, (
+        "network_smoke.HIDDEN_DOC_PATHS drifted from the registered admin pages"
+    )
+
+
+def test_every_test_client_user_names_headers():
+    """Notes 70/74 (the THIRD LANE): a bare test client sends `Werkzeug/x.y`
+    — crawler lane at dimll >= 2.8 — so a mark_hidden page 404s and an
+    every-page-200 loop goes red at the floor bump. Any file that drives
+    `.test_client()` must name a UA.
+
+    KNOWN LIMIT of this grep, measured on this tree and reported upstream:
+    it is a FILE-level substring test, so it passes a file that names a UA
+    anywhere while its actual sweep is bare. scripts/audit_links.py passed
+    it while every one of its three in-process fetches was unnamed — its
+    `headers=` were the external urllib probes. The companion assertion
+    below is what actually holds that file.
+    """
+    offenders = []
+    for folder in ("tests", "scripts"):
+        for path in sorted((REPO / folder).glob("*.py")):
+            src = path.read_text()
+            names_ua = "headers=" in src or "HTTP_USER_AGENT" in src
+            if ".test_client()" in src and not names_ua:
+                offenders.append(f"{folder}/{path.name}")
+    assert offenders == [], offenders
+
+
+def test_audit_links_sweeps_on_the_browser_lane_and_hidden_pages_still_404(app_module, client):
+    """The lane repair and the thing it must not hide, in ONE pin.
+
+    Item 18 is explicit that repairing the lane alone "measures strictly
+    less, silently": once the sweeper speaks browser-lane, a mark_hidden
+    page answers 200 to IT, so the fact that the page still 404s to a
+    crawler stops being observed unless something asserts it. Both halves
+    live here so neither can be landed without the other.
+    """
+    from dash_improve_my_llms import classify
+
+    from lib.constants import INTERNAL_UA_TOKEN
+    from conftest import CRAWLER_UA
+    from scripts import audit_links
+
+    # half one: the sweeper names the browser lane, and stays internal
+    assert classify(audit_links.CLIENT_UA)["lane"] == "browser"
+    assert INTERNAL_UA_TOKEN in audit_links.CLIENT_UA
+    assert audit_links.CLIENT_HEADERS["User-Agent"] == audit_links.CLIENT_UA
+
+    # half two: the pages it now reaches are STILL closed to a crawler
+    import dash
+
+    admin = [p["path"] for p in dash.page_registry.values()
+             if p["path"].startswith("/admin/")]
+    assert admin
+    for path in admin:
+        assert client.get(path, user_agent=CRAWLER_UA).status == 404, path
+        assert client.get(f"{path}/llms.txt", user_agent=CRAWLER_UA).status == 404, path
