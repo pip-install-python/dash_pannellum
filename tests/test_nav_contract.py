@@ -273,10 +273,18 @@ def test_the_api_page_documents_this_host_s_component(app_module):
     layout = entry["layout"]
     body = str(layout() if callable(layout) else layout)
     assert "m2d-block-kwargs" in body, "the prop table is not the generated one"
-    # Props that exist ONLY in metadata.json — proof the table is generated
-    # from the package rather than hand-typed prose that can go stale.
+    # Props that exist ONLY in the component metadata — proof the table is
+    # generated rather than hand-typed prose that can go stale.
+    #
+    # THIS PIN SEES ONE LANE, and that was a defect in itself: it asserts
+    # the React tree, which is the only place the directive's output lived
+    # until sync item 18. When it was written (item 16) its author noticed
+    # the crawler document lacked these props and moved the assertion here
+    # rather than filing it — so the pin passed while every agent got a
+    # props page with no props. tests/test_api_lane_parity.py is the real
+    # guard now: rows, row content, all three lanes, and a mutation check.
     for prop in ("northOffset", "hideLoadingSpinner", "useHttpStreaming"):
-        assert prop in body, f"{prop} is in metadata.json but not on /api"
+        assert prop in body, f"{prop} is in the component metadata but not on /api"
 
 
 def test_the_api_reference_generator_reads_a_dash_package(app_module):

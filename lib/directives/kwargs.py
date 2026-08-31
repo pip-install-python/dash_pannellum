@@ -23,6 +23,57 @@ def convert_docstring_to_dict(docstring):
     return params
 
 
+PACKAGE_MAP = {
+    "dmc": "dash_mantine_components",
+    "html": "dash.html",
+    "dcc": "dash.dcc",
+    "dash": "dash",
+}
+
+
+def resolve_props(component_spec: str, library: str = "dash_mantine_components") -> list:
+    """`[{name, type, description}, ...]` for a `.. kwargs::` target.
+
+    THE ONE PARSE (sync item 18 contract 7, note 80). It has two callers and
+    that is the whole point: `Kwargs.hook` below builds the React tree from
+    it, and `pages/markdown._expand_kwargs_directives` builds the MARKDOWN
+    table the machine lane serves. When those two were separate — when the
+    directive only fed the React tree — /api's prop table existed solely in
+    the JS-rendered DOM: measured on this host 2026-08-31, all four of
+    `northOffset` / `hideLoadingSpinner` / `useHttpStreaming` / `autoLoad`
+    present in the layout and absent from /api/llms.txt, the crawler HTML
+    and the app-shell markup alike. Every agent got a props page with no
+    props.
+
+    Returns [] on any failure: a props table is a nice-to-have, not worth
+    failing a page for. `tests/test_api_lane_parity.py` is what stops []
+    from being silence — it asserts ROWS, in every lane.
+    """
+    if "." in component_spec:
+        package_abbr, component_name = component_spec.rsplit(".", 1)
+        package = PACKAGE_MAP.get(package_abbr, package_abbr)
+    else:
+        package, component_name = library, component_spec
+    try:
+        imported = importlib.import_module(package)
+        component = getattr(imported, component_name)
+        docstring = inspect.getdoc(component)
+        if docstring and "----------" in docstring:
+            # numpy-style (dash-mantine-components hand-written docs)
+            return convert_docstring_to_dict(docstring.split("----------\n")[-1])
+        if docstring and "Keyword arguments:" in docstring:
+            # dash-generate-components style — every component a library
+            # satellite documents, including this repo's own DashPannellum.
+            from markdown2dash.src.utils import (
+                convert_docstring_to_dict as dash_convert,
+            )
+
+            return dash_convert(docstring.split("Keyword arguments:")[-1])
+    except Exception:
+        pass
+    return []
+
+
 class Kwargs(KwargsBase):
 
     def hook(self, md, state):
@@ -35,53 +86,7 @@ class Kwargs(KwargsBase):
         for section in sections:
             attrs = section["attrs"]
 
-            # Parse the component specification (e.g., "dmc.Button" or "html.Div")
-            component_spec = attrs["title"]
-
-            # Common package name mappings
-            package_map = {
-                "dmc": "dash_mantine_components",
-                "html": "dash.html",
-                "dcc": "dash.dcc",
-                "dash": "dash"
-            }
-
-            # Try to parse package.Component format
-            if "." in component_spec:
-                package_abbr, component_name = component_spec.rsplit(".", 1)
-                package = package_map.get(package_abbr, package_abbr)
-            else:
-                # If no package specified, use default or library attribute
-                package = attrs.pop("library", "dash_mantine_components")
-                component_name = component_spec
-
-            try:
-                imported = importlib.import_module(package)
-                component = getattr(imported, component_name)
-                docstring = inspect.getdoc(component)
-
-                if docstring and "----------" in docstring:
-                    # numpy-style (dash-mantine-components hand-written docs)
-                    docstring = docstring.split("----------\n")[-1]
-                    attrs["kwargs"] = convert_docstring_to_dict(docstring)
-                elif docstring and "Keyword arguments:" in docstring:
-                    # dash-generate-components style — every component a
-                    # library satellite documents. The base markdown2dash
-                    # Kwargs ships a parser for exactly this format; this
-                    # numpy override used to SHADOW it, so dash-built
-                    # components rendered silently EMPTY props tables
-                    # (found on muicharts' /api; pannellum's /api likely
-                    # affected too). Fall back to the base parser.
-                    from markdown2dash.src.utils import (
-                        convert_docstring_to_dict as dash_convert,
-                    )
-
-                    attrs["kwargs"] = dash_convert(
-                        docstring.split("Keyword arguments:")[-1]
-                    )
-                else:
-                    attrs["kwargs"] = []
-            except Exception:
-                # Import failed or the component has no usable docstring;
-                # a props table is a nice-to-have, not worth failing a page for.
-                attrs["kwargs"] = []
+            # ONE parse, shared with the prose expansion — see resolve_props.
+            attrs["kwargs"] = resolve_props(
+                attrs["title"], attrs.pop("library", "dash_mantine_components")
+            )

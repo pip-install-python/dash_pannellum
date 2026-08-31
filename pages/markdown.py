@@ -90,6 +90,37 @@ _LANG_MAP = {
 }
 
 
+_KWARGS_DIRECTIVE = re.compile(r'^\.\. kwargs::(.+?)$', re.MULTILINE)
+
+
+def _kwargs_table(component_spec: str) -> str:
+    """The `.. kwargs::` prop table as MARKDOWN, from the one shared parse.
+
+    Sync item 18 contract (7), the FOURTH empty-/api mechanism: a
+    markdown2dash directive that renders Dash components puts its output
+    only in the React tree. The machine lane, the prerender and the crawler
+    HTML are all built from the markdown SOURCE, where the directive line is
+    simply stripped — so /api served a props page with NO PROPS to every
+    agent and crawler while looking perfect in a browser. Measured here
+    2026-08-31 before this expansion existed: 27 props in the layout, zero
+    in /api/llms.txt, the crawler HTML and the app-shell markup.
+    """
+    from lib.directives.kwargs import resolve_props
+
+    props = resolve_props(component_spec.strip())
+    if not props:
+        # Say so rather than rendering silence — an empty table and a broken
+        # spec looked identical, which is how this survived a release.
+        return f'\n<!-- kwargs: no props resolved for {component_spec.strip()} -->\n'
+    rows = ["| Prop | Type | Description |", "|------|------|-------------|"]
+    for prop in props:
+        name = str(prop.get("name", "")).strip()
+        typ = str(prop.get("type", "")).strip().replace("|", "\\|")
+        desc = " ".join(str(prop.get("description", "")).split()).replace("|", "\\|")
+        rows.append(f"| `{name}` | {typ} | {desc} |")
+    return "\n" + "\n".join(rows) + "\n"
+
+
 def _expand_source_directives(markdown_content: str) -> str:
     """Inline `.. source::path` directives with the referenced file content.
 
@@ -132,6 +163,11 @@ def _expand_source_directives(markdown_content: str) -> str:
             fence = None
         elif fence is None and _SOURCE_DIRECTIVE.match(line):
             out.append(expansion(line))
+            continue
+        elif fence is None and _KWARGS_DIRECTIVE.match(line):
+            # Same fence rule and the same reason: `.. kwargs::` inside a
+            # ```markdown block is documentation showing the syntax.
+            out.append(_kwargs_table(_KWARGS_DIRECTIVE.match(line).group(1)))
             continue
         out.append(line)
     return '\n'.join(out)

@@ -202,6 +202,23 @@ prevent, not the fix.
     named `Dash-Documentation-Boilerplate`, so the "unpushed" link
     classification had never matched anything in this repo.
 
+14. **`.. kwargs::` expands into the PROSE as well as the React tree.**
+    Item 18's amended contract (7) names four mechanisms for an empty
+    `/api` at 200; the fourth is a markdown2dash directive whose output
+    reaches only the React tree, because the machine lane, the prerender
+    and the crawler HTML are built from the markdown SOURCE where the
+    directive line is stripped. This host had it, and worse than the
+    baseline: measured 2026-08-31, all 27 props present in the layout and
+    ZERO in `/api/llms.txt`, the crawler HTML and the app-shell markup.
+    The template has no counterpart because it documents no component
+    package — `pages/api.py` builds DMC tables directly and never goes
+    through a directive. Fix per the item's shape: `resolve_props()` in
+    `lib/directives/kwargs.py` is ONE parse with two callers, and
+    `pages/markdown._expand_kwargs_directives` emits a markdown table
+    fence-aware, exactly as `.. source::` has always been handled here.
+    `tests/test_api_lane_parity.py` pins rows, row CONTENT and all three
+    reachable lanes, and mutation-checks itself.
+
 ## Byte-owned paths
 
 Paths this fork owns byte-for-byte. The F3b fan-out never overwrites
