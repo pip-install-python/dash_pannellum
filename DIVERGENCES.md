@@ -123,7 +123,16 @@ prevent, not the fix.
    `test_api_page_is_not_registered_when_no_package_is_declared` asserts
    `API_PACKAGES == []` and can never hold on a component fork.
 
-8. **`pages/changelog.py` reads TWO changelog shapes.** The template's
+8. **RETIRED 2026-08-31 — the template took this upstream.** 1.6.43's
+    `pages/changelog.py` carries the prose-body handling this fork wrote
+    (the `para` item type) AND adds `_is_release_label`, which this fork
+    needed and did not have: mine EXCLUDED a prose `## ` section but
+    silently DROPPED its content off the timeline, where the template's
+    excludes it and folds the prose into the preceding release. Over-
+    inclusion announces itself; omission does not. Taken byte-for-byte, so
+    this file is cargo again. Historical text follows.
+
+    *(was)* **`pages/changelog.py` reads TWO changelog shapes.** The template's
    parser takes Keep-a-Changelog `## [2.0.0] - 2026-08-02` with `- ` bullets
    only. This repo's CHANGELOG uses `## 2.0.0 — 2026-08-02` and is
    prose-first — the 2.0.0 entry is 63 lines of prose and zero bullets — so
@@ -218,6 +227,19 @@ prevent, not the fix.
     fence-aware, exactly as `.. source::` has always been handled here.
     `tests/test_api_lane_parity.py` pins rows, row CONTENT and all three
     reachable lanes, and mutation-checks itself.
+
+15. **The exec-lane builder honours `:code: false`.** Ported at
+    template 1.6.43 after the template seat shipped the inverted form to
+    its own production and muischeduler caught it. On this host 10 of 11
+    `.. exec::` directives carry `:code: false` and all ten ALSO carry
+    their own `.. source::` — so the source was already published by the
+    author's explicit choice, and the dedupe (which outranks the withheld
+    marker, because announcing a withheld source that is visibly in the
+    document would be a false statement about the page) kept the builder
+    silent on every one. Measured before porting the correction, not
+    assumed. The eleventh, `docs/getting-started/basic_panorama.py`,
+    carries no options and is the one the builder legitimately expanded.
+    Pinned both ways in `tests/test_api_lane_parity.py`.
 
 ## Byte-owned paths
 

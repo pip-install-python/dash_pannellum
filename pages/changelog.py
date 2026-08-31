@@ -19,12 +19,14 @@ from lib.constants import OG_IMAGE_URL, PAGE_TITLE_PREFIX, SITE_SHORT_NAME
 
 CHANGELOG_PATH = Path(__file__).resolve().parent.parent / "CHANGELOG.md"
 
+CHANGELOG_DESCRIPTION = f"Version history of {SITE_SHORT_NAME}, rendered from CHANGELOG.md."
+
 dash.register_page(
     __name__,
     path="/changelog",
     name="Changelog",
     title=PAGE_TITLE_PREFIX + "Changelog",
-    description=f"Version history of {SITE_SHORT_NAME}, rendered from CHANGELOG.md.",
+    description=CHANGELOG_DESCRIPTION,
     image_url=OG_IMAGE_URL,
     icon="tabler:history",
 )
@@ -63,11 +65,32 @@ def newest_date(path: Path = CHANGELOG_PATH) -> str | None:
 
 
 def _is_version(label: str) -> bool:
-    """`2.0.0` yes, `Unreleased` no. This host's changelog opens with an
-    `## Unreleased` section, and the badge rendered it as "vUnreleased"
-    until sync item 18 — browser-lane only, so the machine checks never
-    saw it (the crawler document is the markdown, not the Timeline)."""
     return bool(re.fullmatch(r"\d+(\.\d+)*", label))
+
+
+def _is_release_label(label: str) -> bool:
+    """Is an UNBRACKETED `## …` a release heading, or just prose?
+
+    1.6.41 widened the heading match to accept pannellum's unbracketed
+    `## 2.0.0 — date`, and free text came through with it (muicharts,
+    2026-08-31): its `## Component License Requirements` parsed as a
+    release, rendered a Timeline card badged with that whole sentence, and
+    made /changelog claim 15 releases where there are 14. This repo had the
+    same defect and did not notice — `## Migration Guides` and `## Support`
+    at the foot of its own CHANGELOG.md were two phantom releases. The
+    fleet-shapes fixture could not catch it: it holds only release
+    headings, so it never asked what a NON-release heading does.
+
+    Brackets are the Keep a Changelog convention and are trusted as intent.
+    Unbracketed, a label must LOOK like a release: a version, an ISO date,
+    or Unreleased.
+    """
+    label = label.strip()
+    return bool(
+        _is_version(label.lstrip("vV"))
+        or re.fullmatch(r"\d{4}-\d{2}-\d{2}", label)
+        or label.lower() == "unreleased"
+    )
 
 
 def parse_changelog(path: Path = CHANGELOG_PATH) -> list[dict]:
@@ -85,16 +108,37 @@ def parse_changelog(path: Path = CHANGELOG_PATH) -> list[dict]:
             sections.setdefault(section, []).extend(items)
 
     for line in path.read_text(encoding="utf-8").split("\n"):
-        # Two heading shapes, because the fleet writes both: Keep-a-Changelog
-        # `## [2.0.0] - 2026-08-02` and the plain `## 2.0.0 — 2026-08-02` this
-        # host and muicharts use. Separator is a hyphen or an em dash.
-        vm = re.match(r"^## \[([^\]]+)\](?:\s*[-—]\s*(.+))?\s*$", line) or \
-            re.match(r"^## (?!\[)(\S+)(?:\s*[-—]\s*(.+))?\s*$", line)
+        # ASCII hyphen, en dash or em dash between version and date —
+        # leaflet's headings use "—" and rendered every version DATELESS.
+        # Every heading shape the fleet writes (measured 2026-08-30):
+        #   ## [1.4.0] - 2026-08-03            hyphen
+        #   ## [1.0.0] — 2026-08-21            em dash (en dash too)
+        #   ## 2.0.0 — 2026-08-02              no brackets
+        #   ## [0.2.0] — 2026-07-31 (note)     trailing note
+        #   ## [0.1.0] — unreleased            words where the date goes
+        #   ## [2026-08-30] — title            the date IS the label
+        #   ## [Unreleased]
+        # Parsed as [?label]? (sep)? rest?, with the ISO date taken from
+        # wherever it sits and the leftover kept as a note.
+        # `(?(open)\])` — the closing bracket is required only where an
+        # opening one matched, so bracketed and bare headings stay distinct
+        # and `_is_release_label` can hold the bare ones to a higher bar.
+        vm = re.match(
+            r"^## (?P<open>\[)?(?P<label>[^\]#\n]+?)(?(open)\])"
+            r"(?:\s+[-–—]\s+(?P<rest>.+?))?\s*$",
+            line,
+        )
+        if vm and not vm.group("open") and not _is_release_label(vm.group("label")):
+            vm = None  # prose section, not a release
         if vm:
             close_section()
             if current is not None:
                 versions.append({**current, "sections": sections})
-            current = {"version": vm.group(1), "date": vm.group(2) or ""}
+            label, rest = vm.group("label").strip(), (vm.group("rest") or "").strip()
+            iso = re.search(r"\d{4}-\d{2}-\d{2}", rest) or re.search(r"\d{4}-\d{2}-\d{2}", label)
+            date = iso.group(0) if iso else ""
+            note = rest.replace(date, "").strip(" -–—()") if rest else ""
+            current = {"version": label, "date": date, "note": note}
             sections, section, items = {}, None, []
             continue
         sm = re.match(r"^### (.+)", line)
@@ -102,26 +146,29 @@ def parse_changelog(path: Path = CHANGELOG_PATH) -> list[dict]:
             close_section()
             section, items = sm.group(1), []
             continue
-        if current is None or not section:
+        if current is None:
             continue
+        if not section:
+            # Prose-first releases (pannellum: `## 2.0.0 — date` then
+            # paragraphs, no ### sections) rendered EIGHT EMPTY HEADINGS
+            # silently. Prose under a version heading is its own section.
+            if line.strip() and not line.startswith("#"):
+                section, items = "Notes", []
+            else:
+                continue
         if line.startswith("- "):
             items.append({"type": "item", "text": line[2:]})
         elif line.startswith("  - "):
             items.append({"type": "subitem", "text": line[4:]})
         elif line.startswith("  ") and items and items[-1]["type"] in ("item", "subitem"):
             items[-1]["text"] += " " + line.strip()      # wrapped bullet
-        elif line.strip():
-            # PROSE. A changelog section that explains itself in paragraphs
-            # rather than bullets is not an empty section — this host's 2.0.0
-            # entry is 63 lines of prose and 0 bullets, and the bullets-only
-            # reader rendered it as a heading with nothing under it. A blank
-            # line starts a new paragraph; a continuation joins the last one.
-            if items and items[-1]["type"] == "para":
+        elif line.strip() and not line.startswith("#"):
+            if items and items[-1]["type"] == "para" and not items[-1].get("closed"):
                 items[-1]["text"] += " " + line.strip()
             else:
                 items.append({"type": "para", "text": line.strip()})
-        elif items and items[-1]["type"] == "para":
-            items.append({"type": "break", "text": ""})
+        elif not line.strip() and items and items[-1]["type"] == "para":
+            items[-1]["closed"] = True
     close_section()
     if current is not None:
         versions.append({**current, "sections": sections})
@@ -146,18 +193,29 @@ def _section_icon(name: str):
     return "tabler:point", "gray"
 
 
-def _inline(text: str):
-    """`code` and **bold** inside one bullet."""
+def _code(text: str):
     out = []
     for i, part in enumerate(re.split(r"`([^`]+)`", text)):
-        if i % 2:
-            out.append(dmc.Code(part, style={"overflowWrap": "anywhere"}))
+        if not part:
             continue
-        for j, bp in enumerate(re.split(r"\*\*([^*]+)\*\*", part)):
-            if not bp:
-                continue
-            out.append(html.Strong(bp) if j % 2 else bp)
+        out.append(dmc.Code(part, style={"overflowWrap": "anywhere"}) if i % 2 else part)
     return out
+
+
+def _inline(text: str):
+    """**bold** first, then `code` — in that order on purpose (note 67):
+    a bold span CONTAINING inline code rendered its asterisks raw when
+    code was split first, because the bold markers then sat in different
+    fragments."""
+    out = []
+    for j, part in enumerate(re.split(r"\*\*(.+?)\*\*", text)):
+        if not part:
+            continue
+        if j % 2:
+            out.append(html.Strong(_code(part)))
+        else:
+            out.extend(_code(part))
+    return out or [text]
 
 
 # A bullet in a no-wrap Group: without min-width:0 the Text grows to the
@@ -172,16 +230,13 @@ def _section(name: str, items: list):
     icon, color = _section_icon(name)
     rows = []
     for it in items:
-        if it["type"] == "break":
-            continue
-        if it["type"] == "para":
-            # Prose paragraphs render as prose — no bullet glyph, full width.
-            rows.append(dmc.Text(_inline(it["text"]), size="sm", style=_WRAP))
-        elif it["type"] == "item":
+        if it["type"] == "item":
             rows.append(dmc.Group(
                 [DashIconify(icon="tabler:point-filled", width=8, color=f"var(--mantine-color-{color}-6)"),
                  dmc.Text(_inline(it["text"]), size="sm", style=_WRAP)],
                 gap="xs", align="flex-start", wrap="nowrap"))
+        elif it["type"] == "para":
+            rows.append(dmc.Text(_inline(it["text"]), size="sm", style=_WRAP))
         else:
             rows.append(dmc.Group(
                 [dmc.Box(w=16), DashIconify(icon="tabler:point", width=6),
@@ -197,13 +252,16 @@ def _section(name: str, items: list):
 
 def _version_item(v: dict, is_current: bool):
     cards = [_section(n, items) for n, items in v["sections"].items() if items]
+    # `v` only when the label IS a version: `## [Unreleased]` read as
+    # "VUNRELEASED" and a date-labelled release as "v2026-08-30" (note 67).
+    label = f"v{v['version']}" if _is_version(v["version"]) else v["version"]
+    when = " ".join(x for x in (v.get("date", ""), v.get("note", "")) if x)
     return dmc.TimelineItem(
         bullet=dmc.ThemeIcon(DashIconify(icon="tabler:rocket", width=16),
                              variant="filled" if is_current else "light", size=28, radius="xl"),
         title=dmc.Group(
-            [dmc.Badge(f"v{v['version']}" if _is_version(v["version"]) else v["version"],
-                       variant="filled" if is_current else "light", size="lg"),
-             dmc.Text(v["date"], size="sm", c="dimmed") if v["date"] else None,
+            [dmc.Badge(label, variant="filled" if is_current else "light", size="lg"),
+             dmc.Text(when, size="sm", c="dimmed") if when else None,
              dmc.Badge("Current", color="green", variant="outline", size="sm") if is_current else None],
             gap="sm"),
         children=dmc.Stack(cards, gap="xs", mt="sm") if cards
@@ -245,24 +303,21 @@ def layout(**kwargs):
     )
 
 
-# The full machine record (sync item 18; leaflet's finding): a module-level
-# LLMS_DOC alone leaves the package to discover the page with NO `lastmod`,
-# so /changelog entered the sitemap undated — measured on this host's wire
-# 2026-08-31, `<lastmod>` ABSENT for /changelog while every docs page had
-# one. lastmod = the newest dated release heading, so it moves exactly when
-# the content moves. Same two registrations pages/markdown.py makes for
-# every docs page, so the control board can see this page too.
+# The full machine record (1.6.41; leaflet's finding): a module-level
+# LLMS_DOC alone leaves the package to discover the page with no
+# `lastmod`, so /changelog entered the sitemap undated — and outside the
+# control board's llms.txt toggle. Same two calls pages/markdown.py makes
+# for every docs page; lastmod = the newest dated release heading.
 from dash_improve_my_llms import register_page_metadata  # noqa: E402
 
 from lib import page_tiers, page_visibility  # noqa: E402
 
-page_visibility.register_default("/changelog", "Changelog",
-                                 visibility="public", llms_public=True)
+page_visibility.register_default("/changelog", "Changelog", visibility="public", llms_public=True)
 page_tiers.register("/changelog", "public", llms_public=True)
 register_page_metadata(
     path="/changelog",
     name="Changelog",
-    description=f"Version history of {SITE_SHORT_NAME}, rendered from CHANGELOG.md.",
+    description=CHANGELOG_DESCRIPTION,
     title=PAGE_TITLE_PREFIX + "Changelog",
     image_url=OG_IMAGE_URL,
     schema_type="TechArticle",

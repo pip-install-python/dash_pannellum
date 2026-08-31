@@ -178,7 +178,8 @@ def _expand_source_directives(markdown_content: str) -> str:
 
     out: List[str] = []
     fence = None  # the marker that opened the block we are inside, if any
-    for line in markdown_content.split('\n'):
+    lines = markdown_content.split('\n')
+    for i, line in enumerate(lines):
         head = line.lstrip()[:3]
         if fence is None and head in ('```', '~~~'):
             fence = head
@@ -188,15 +189,45 @@ def _expand_source_directives(markdown_content: str) -> str:
             out.append(expansion(line))
             continue
         elif fence is None and _EXEC_DIRECTIVE.match(line):
-            # `.. exec::module` renders a COMPONENT into the React tree;
-            # its source never reaches the machine lane unless it is
-            # expanded here (owner's decision 0aa). Same fence rule, and
-            # deduped: a page that already shows the file with
-            # `.. source::` must not carry it twice.
+            # `.. exec::module` renders a COMPONENT into the React tree; its
+            # source never reaches the machine lane unless it is expanded
+            # here. THREE OUTCOMES, and the PRECEDENCE is the whole lesson
+            # (template 1.6.43, found by muischeduler after the template
+            # shipped the inversion to production):
+            #
+            #  1. Target already `.. source::`d in this document -> SILENT.
+            #     Dedupe wins over the withheld marker: the source IS here,
+            #     so announcing it as withheld would be a false statement
+            #     about the page. On THIS host that is 10 of 11 directives.
+            #  2. `:code: false` -> a MARKER naming the module, never the
+            #     source and never a silent skip. That option is the AUTHOR
+            #     saying "this module is plumbing for an embed, not
+            #     documentation"; expanding it publishes to the machine lane
+            #     exactly what the browser lane deliberately hides, and does
+            #     it silently, because the browser keeps looking right.
+            #     Broken, hidden and absent must not look alike.
+            #  3. Otherwise -> expand, which is the mechanism-4 fix.
             spec = _EXEC_DIRECTIVE.match(line).group(1)
             target = _exec_target_path(spec)
+            opts = []
+            for nxt in lines[i + 1:]:
+                stripped = nxt.strip()
+                if stripped.startswith(':'):
+                    opts.append(stripped)
+                elif not stripped:
+                    continue
+                else:
+                    break
+            hidden = any(o.replace(' ', '').lower() == ':code:false' for o in opts)
             out.append(line)
-            if target not in sourced:
+            if target in sourced:
+                pass
+            elif hidden:
+                out.append(
+                    f'\n<!-- component rendered from {target}; source withheld '
+                    f'by `:code: false` -->\n'
+                )
+            else:
                 out.append(expansion(f'.. source::{target}'))
             continue
         elif fence is None and _KWARGS_DIRECTIVE.match(line):

@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 import pytest
 from urllib.parse import urlparse
 
-from conftest import BROWSER_ACCEPT, CRAWLER_UA
+from conftest import BROWSER_UA, BROWSER_ACCEPT, CRAWLER_UA
 from lib import network_directory as nd
 from lib.constants import BASE_URL
 
@@ -188,6 +188,11 @@ def test_healthz_is_live_not_a_snapshot(monkeypatch):
     stub = SimpleNamespace(server=Flask("healthz_snapshot_pin"))
     register_health_route(stub, "flask")
     probe = stub.server.test_client()
+    # Named for the fleet pin, not because this app classifies lanes:
+    # the stub carries only register_health_route, no dimll middleware.
+    # `headers={"CF-IPCountry": ...}` below satisfied the OLD grep and
+    # named no User-Agent at all — the exact false pass 1.6.43 closed.
+    probe.environ_base["HTTP_USER_AGENT"] = BROWSER_UA
     assert probe.get("/healthz").get_json()["app"] == "before"
 
     monkeypatch.setenv("SATELLITE_APP_KEY", "after")

@@ -166,3 +166,78 @@ def test_the_exec_expansion_dedupes_on_the_TARGET_not_the_line():
     diff = f".. exec::{mod}\n\n.. source::{b}\n"
     assert _expand_source_directives(same).count("# File:") == 1
     assert _expand_source_directives(diff).count("# File:") == 2
+
+
+def test_code_false_is_the_authors_signal_and_dedupe_outranks_it():
+    """Template 1.6.43, which the template seat shipped to production and
+    muischeduler caught: `:code: false` is the AUTHOR saying this module is
+    plumbing for an embed, not documentation. Expanding it publishes to the
+    machine lane exactly what the browser lane deliberately hides — and
+    silently, because the browser keeps looking right.
+
+    On THIS host 10 of 11 exec directives carry `:code: false`, and all ten
+    also carry their own `.. source::`, so the source was already published
+    by the author's explicit choice and the dedupe kept the builder silent.
+    That is one authoring edit away from the defect, which is why the
+    precedence is pinned rather than trusted.
+    """
+    from pages.markdown import _expand_source_directives as expand
+
+    paired = (".. exec::docs.tours.tour_example\n    :code: false\n\n"
+              ".. source::docs/tours/tour_example.py\n")
+    hidden = ".. exec::docs.tours.tour_example\n    :code: false\n"
+    plain = ".. exec::docs.tours.tour_example\n"
+
+    # 1. dedupe OUTRANKS the marker: the source is in this document, so
+    #    announcing it as withheld would be a false statement about the page
+    out = expand(paired)
+    assert "# File:" in out and "source withheld" not in out
+
+    # 2. withheld -> a MARKER naming the module, never the source and never
+    #    a silent skip: broken, hidden and absent must not look alike
+    out = expand(hidden)
+    assert "# File:" not in out, "the author's withheld source was published"
+    assert "source withheld" in out and "tour_example.py" in out
+
+    # 3. no signal -> expand, which is the mechanism-4 fix
+    assert "# File:" in expand(plain)
+
+
+def test_no_withheld_source_is_published_by_any_real_page():
+    """The live form of the pin above, over the actual docs tree."""
+    import pathlib
+    import re
+
+    from pages.markdown import _exec_target_path, _expand_source_directives
+
+    EXEC = re.compile(r"^\.\. exec::(.+?)$")
+    SRC = re.compile(r"^\.\. source::(.+?)$")
+    checked = 0
+    for f in sorted(pathlib.Path("docs").glob("*/*.md")):
+        lines = f.read_text().split("\n")
+        sourced = {m.group(1).strip() for m in (SRC.match(x) for x in lines) if m}
+        expanded = _expand_source_directives(f.read_text())
+        for i, line in enumerate(lines):
+            m = EXEC.match(line)
+            if not m:
+                continue
+            opts = []
+            for nxt in lines[i + 1:]:
+                s = nxt.strip()
+                if s.startswith(":"):
+                    opts.append(s)
+                elif not s:
+                    continue
+                else:
+                    break
+            if not any(o.replace(" ", "").lower() == ":code:false" for o in opts):
+                continue
+            checked += 1
+            target = _exec_target_path(m.group(1))
+            if target in sourced:
+                continue  # the author published it themselves
+            assert f"# File: {target}" not in expanded, (
+                f"{f}: `:code: false` withheld {target} and the builder "
+                "published it to the machine lane anyway"
+            )
+    assert checked >= 5, f"only {checked} withheld directives seen — sweep too thin"

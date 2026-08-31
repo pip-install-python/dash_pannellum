@@ -403,7 +403,11 @@ def test_every_test_client_user_names_headers():
     for folder in ("tests", "scripts"):
         for path in sorted((REPO / folder).glob("*.py")):
             src = path.read_text()
-            names_ua = "headers=" in src or "HTTP_USER_AGENT" in src
+            # `headers=` IS NOT EVIDENCE OF A USER-AGENT (template 1.6.43,
+            # muischeduler): a call passing `headers={"CF-IPCountry": "FR"}`
+            # satisfied the loose form and named no lane at all. Require the
+            # token itself.
+            names_ua = "User-Agent" in src or "HTTP_USER_AGENT" in src
             if ".test_client()" in src and not names_ua:
                 offenders.append(f"{folder}/{path.name}")
     assert offenders == [], offenders
