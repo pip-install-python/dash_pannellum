@@ -109,10 +109,20 @@ def test_a_docs_page_really_carries_its_parsed_content(registry, monkeypatch):
     docs page (derived from the registry: the first page that registered a
     TOC) must render real depth and contain its own heading."""
     monkeypatch.setenv("ALLOW_UNGATED_ADMIN", "0")
-    from lib.aside import ASIDE_PATHS
 
-    by_path = {p.get("path"): p for p in registry.values()}
-    page = by_path[sorted(ASIDE_PATHS)[0]]
+    # From the REGISTRY, not lib.aside.ASIDE_PATHS: the aside set is a
+    # side effect of pages carrying a `.. toc::`, so a page losing its TOC
+    # would silently change which page this control tests, or empty the set
+    # and make it a KeyError instead of a failure.
+    docs = sorted(
+        (p for p in registry.values()
+         if (p.get("path") or "").count("/") >= 1
+         and not (p.get("path") or "").startswith("/admin")
+         and p.get("path") not in ("/", "/changelog", "/404")),
+        key=lambda p: p["path"],
+    )
+    assert docs, "no docs page in the registry — this control would be vacuous"
+    page = docs[0]
     layout = _resolve(page["layout"])
 
     nodes: list = []

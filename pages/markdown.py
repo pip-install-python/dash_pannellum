@@ -91,6 +91,12 @@ _LANG_MAP = {
 
 
 _KWARGS_DIRECTIVE = re.compile(r'^\.\. kwargs::(.+?)$', re.MULTILINE)
+_EXEC_DIRECTIVE = re.compile(r'^\.\. exec::(.+?)$', re.MULTILINE)
+
+
+def _exec_target_path(module_spec: str) -> str:
+    """`docs.getting-started.basic_panorama` -> `docs/getting-started/basic_panorama.py`."""
+    return module_spec.strip().replace(".", "/") + ".py"
 
 
 def _kwargs_table(component_spec: str) -> str:
@@ -153,6 +159,23 @@ def _expand_source_directives(markdown_content: str) -> str:
         except Exception as exc:
             return f'\n<!-- Error reading {file_path}: {exc} -->\n'
 
+    # Targets that already have a `.. source::` of their own, so the exec
+    # expansion below can DEDUPE against them (ops' rule): same target =>
+    # skip, DIFFERENT target => still expand. Collected unfenced only, for
+    # the same reason the expansion is fence-aware.
+    sourced = set()
+    _fence = None
+    for _line in markdown_content.split('\n'):
+        _head = _line.lstrip()[:3]
+        if _fence is None and _head in ('```', '~~~'):
+            _fence = _head
+        elif _fence is not None and _head == _fence:
+            _fence = None
+        elif _fence is None:
+            _m = _SOURCE_DIRECTIVE.match(_line)
+            if _m:
+                sourced.add(_m.group(1).strip())
+
     out: List[str] = []
     fence = None  # the marker that opened the block we are inside, if any
     for line in markdown_content.split('\n'):
@@ -163,6 +186,18 @@ def _expand_source_directives(markdown_content: str) -> str:
             fence = None
         elif fence is None and _SOURCE_DIRECTIVE.match(line):
             out.append(expansion(line))
+            continue
+        elif fence is None and _EXEC_DIRECTIVE.match(line):
+            # `.. exec::module` renders a COMPONENT into the React tree;
+            # its source never reaches the machine lane unless it is
+            # expanded here (owner's decision 0aa). Same fence rule, and
+            # deduped: a page that already shows the file with
+            # `.. source::` must not carry it twice.
+            spec = _EXEC_DIRECTIVE.match(line).group(1)
+            target = _exec_target_path(spec)
+            out.append(line)
+            if target not in sourced:
+                out.append(expansion(f'.. source::{target}'))
             continue
         elif fence is None and _KWARGS_DIRECTIVE.match(line):
             # Same fence rule and the same reason: `.. kwargs::` inside a

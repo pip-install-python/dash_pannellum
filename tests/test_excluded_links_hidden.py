@@ -38,15 +38,28 @@ def test_admin_paths_absent_from_sitemap_llms_and_sidebar(client, app):
     from components.navbar import create_content
 
     sitemap = client.get("/sitemap.xml").text
-    llms = client.get("/llms.txt").text
     tree = str(create_content(dash.page_registry.values()))
+
+    # THE WHOLE CORPUS, not just /llms.txt (note 75 + consolidation 2): the
+    # tier documents are separate renders, so prose can leak into one while
+    # the index stays clean. This host serves all three (measured 200 on
+    # the wire 2026-08-31); a fork without the tier docs skips those.
+    corpus = {}
+    for doc in ("/llms.txt", "/llms-small.txt", "/llms-full.txt"):
+        r = client.get(doc)
+        if r.status == 200:
+            corpus[doc] = r.text
+    assert "/llms.txt" in corpus, "the corpus index is missing — sweep is vacuous"
 
     leaked = []
     for path in _admin_paths():
         if f"{path}</loc>" in sitemap:
             leaked.append(f"{path} in sitemap.xml")
-        if f"{path})" in llms or f"{path}/llms.txt" in llms:
-            leaked.append(f"{path} in /llms.txt")
+        for doc, body in corpus.items():
+            # LINK-shaped, both clauses: a bare mention in prose is not a
+            # leak, a hyperlink is. `](/admin/x)` and `/admin/x/llms.txt`.
+            if f"{path})" in body or f"{path}/llms.txt" in body:
+                leaked.append(f"{path} in {doc}")
         if path in tree:
             leaked.append(f"{path} in the startup sidebar tree")
     assert leaked == [], f"admin pages published: {leaked}"
@@ -61,5 +74,5 @@ def test_admin_paths_absent_from_sitemap_llms_and_sidebar(client, app):
     assert sections, "the sidebar has no docs section"
     control = sections[0][1][0]["path"]
     assert f"{control}</loc>" in sitemap
-    assert control in llms
+    assert control in corpus["/llms.txt"]
     assert control in tree

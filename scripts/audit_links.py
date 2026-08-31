@@ -116,6 +116,11 @@ CLIENT_UA = (
     + _INTERNAL_UA + " link-audit"
 )
 CLIENT_HEADERS = {"User-Agent": CLIENT_UA}
+# Set on the client itself as well as per call (`environ_base`): a per-call
+# header is one a NEW call site can forget, and forgetting it puts that one
+# probe back on the crawler lane silently. llms' sharpening on this seam:
+# finding a bare client is not the end of the check — the UA it is handed
+# may be on the wrong lane too.
 
 
 def check_external(url: str, cache: Dict[str, int], _retrying: bool = False) -> int:
@@ -160,6 +165,7 @@ def main() -> int:
 
     module = boot()
     client = module.app.server.test_client()
+    client.environ_base["HTTP_USER_AGENT"] = CLIENT_UA
 
     import dash
 

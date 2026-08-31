@@ -105,3 +105,64 @@ def test_the_directive_stays_documentation_inside_a_fence():
     fenced = "```markdown\n.. kwargs::" + SPEC + "\n```\n"
     out = _expand_source_directives(fenced)
     assert ".. kwargs::" in out and "| Prop |" not in out
+
+
+# ---------------------------------------------------------- the exec lane --
+
+
+def test_every_exec_directive_reaches_the_machine_lane():
+    """Consolidation 2, Q6: THE AXIS IS PAIRING, NOT FENCING.
+
+    `.. exec::module` renders a component into the React tree; its SOURCE
+    reaches an agent only if the page also carries a `.. source::` for the
+    same file, or the exec-lane builder expands it. Measured here before
+    the builder: 11 unfenced execs, ONE unpaired —
+    docs/getting-started/basic_panorama.py, the first example a reader
+    meets, whose code appeared in no machine lane at all.
+    """
+    import pathlib
+    import re
+
+    from pages.markdown import _exec_target_path, _expand_source_directives
+
+    EXEC = re.compile(r"^\.\. exec::(.+?)$")
+    checked = 0
+    for f in sorted(pathlib.Path("docs").glob("*/*.md")):
+        text = f.read_text()
+        expanded = _expand_source_directives(text)
+        fence = None
+        for line in text.split("\n"):
+            head = line.lstrip()[:3]
+            if fence is None and head in ("```", "~~~"):
+                fence = head
+                continue
+            if fence is not None:
+                if head == fence:
+                    fence = None
+                continue
+            m = EXEC.match(line)
+            if not m:
+                continue
+            checked += 1
+            target = _exec_target_path(m.group(1))
+            assert f"# File: {target}" in expanded, (
+                f"{f}: `.. exec::{m.group(1).strip()}` renders a component "
+                "whose source reaches no machine lane"
+            )
+    assert checked >= 5, f"only {checked} exec directives seen — sweep too thin"
+
+
+def test_the_exec_expansion_dedupes_on_the_TARGET_not_the_line():
+    """Same target => one copy. DIFFERENT target => still expanded (the
+    half a naive `already has a source::` check gets wrong)."""
+    import pathlib
+
+    from pages.markdown import _expand_source_directives
+
+    a = sorted(pathlib.Path("docs/tours").glob("*.py"))[0]
+    b = sorted(pathlib.Path("docs/scenes").glob("*.py"))[0]
+    mod = str(a).replace("/", ".")[:-3]
+    same = f".. exec::{mod}\n\n.. source::{a}\n"
+    diff = f".. exec::{mod}\n\n.. source::{b}\n"
+    assert _expand_source_directives(same).count("# File:") == 1
+    assert _expand_source_directives(diff).count("# File:") == 2
