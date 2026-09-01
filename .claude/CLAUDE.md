@@ -194,3 +194,50 @@ they win.
   host may still build from main — the discriminating observation is
   the next push that goes red on main: `release` must not move and the
   wire must not change.
+- Which branch Render actually builds can be **measured on a GREEN
+  push**, by TIMING, without waiting for a red one (leaflet,
+  2026-08-31 — the method, not just its answer). `main == release ==
+  wire` at every step of a promote tells you NOTHING: both refs hold
+  the same sha, so the wire cannot separate them, and three promotes
+  on this host said nothing at all. Sample `/healthz` every ~45s from
+  the moment of the push and note when the swap lands relative to the
+  PROMOTE, not the push. leaflet measured build+swap at 2m03s from its
+  promote; had Render reacted to the push instead, the same interval
+  would have put the build live ~1m52s earlier than it appeared. That
+  is STRONG EVIDENCE, not proof — a queued or slow build could produce
+  the same shape. The canonical discriminator is unchanged and still
+  owed here: the first push that goes RED on main must leave `release`
+  unmoved and the wire unchanged. Worth taking on the next promote; it
+  costs one background sampler and converts "asserted" into "strongly
+  evidenced".
+- **Verify the artifact the claim is about, and say which one you
+  measured.** This one was earned HERE and the fleet trap names this
+  host: a props table absent from the crawler document is a defect of
+  the SITE, not of the harness — this repo moved that assertion onto
+  the rendered layout and the pin passed for a fortnight over a corpus
+  serving zero props. WHEN A LANE DISAGREES, THAT IS THE FINDING;
+  never relocate the assertion to the lane that passes. The error runs
+  BOTH ways and the second is worse, because it sends someone hunting
+  a bug that does not exist: `curl https://…/ | grep -c skip-link`
+  returns **0** on a host where the skip link ships and works
+  (excalidraw), because it is a Dash component in `app.layout` — React
+  renders it and the served HTML never contains it. Anything built by
+  the layout rather than written into `templates/index.html` is
+  invisible to the two artifacts curl can reach. The browser lane is
+  THREE artifacts: the app-shell markup, the dimll prerender block
+  inside the same received HTML, and the JS-rendered DOM. Name which.
+- **ASSERT THE CORPUS IS NON-EMPTY before trusting any negative, and
+  print the count beside the result.** A sweep that found nothing and
+  a sweep that swept nothing produce the same green, and only one is
+  evidence. Same family, all measured within days: a file-scoped grep
+  that matched prose ABOUT the defect it was hunting; `pytest … |
+  tail -2 && git commit` committing over a red suite, because a
+  pipeline's exit status is the LAST command's; and a linter exiting 0
+  on a directory its config excludes — not passing the file, not
+  reading it. Capture the exit code; count what you swept; say both.
+  On this host the two live instances were a corpus sweep reading
+  `/llms.txt` alone while `/llms-small.txt` and `/llms-full.txt` went
+  unswept, and a pin that passed on arrival and measured nothing.
+  **A PIN THAT PASSES ON ARRIVAL IS NOT EVIDENCE IT MEASURES
+  ANYTHING** — mutation-check it, or tighten it until it goes red
+  once, before recording it satisfied.
