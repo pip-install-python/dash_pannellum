@@ -124,6 +124,29 @@ class AnalyticsMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class StaticCacheMiddleware(BaseHTTPMiddleware):
+    """Give ``/assets/`` a cache lifetime (1.6.44 item 6g).
+
+    The ASGI half of the Flask ``after_request`` in ``run.py``; the policy
+    itself lives in ``lib/static_cache`` so the two lanes cannot drift into
+    serving different lifetimes for the same file.
+
+    THIS IS THE LANE THAT SERVES on this host — production runs
+    ``DASH_BACKEND=fastapi``, so a fix proven only on the Flask
+    ``after_request`` would be a fix nobody visiting the site receives. Both
+    halves ship together and a test asserts both exist.
+    """
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        from lib.static_cache import cache_control_for
+
+        value = cache_control_for(request.url.path)
+        if value and response.status_code == 200:
+            response.headers["Cache-Control"] = value
+        return response
+
+
 def register_asgi_middleware(app) -> None:
     """Attach all ASGI middleware to ``app.server`` (a FastAPI instance).
 
@@ -134,4 +157,5 @@ def register_asgi_middleware(app) -> None:
     the prerender answers `/` first and the browser-lane 405 survives.
     """
     app.server.add_middleware(AnalyticsMiddleware)
+    app.server.add_middleware(StaticCacheMiddleware)
     app.server.add_middleware(HeadAsGetMiddleware)

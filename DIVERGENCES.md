@@ -270,6 +270,38 @@ prevent, not the fix.
     of it, and `tests/conftest.py` gained `Client.head()` — without
     which the suite structurally could not see this.
 
+## Recorded a11y decisions (1.6.44 item 6)
+
+Two of item 6's seven sub-items are RECORDED rather than fixed. Both
+are decisions, not omissions, and item 6's own wording allows the
+form ("identified and fixed **or recorded**").
+
+- **(d) the mobile console error** — NOT MEASURED FROM THIS SEAT, and
+  said plainly rather than borrowed. The template records "not
+  reproduced" against a reading the owner took in a real Chrome
+  against a deployed build; this session has no browser on the
+  deployed host, and the drop's own note names *pannellum* as one of
+  the three hosts where the error WAS seen. Copying the template's
+  clearance onto this repo would be exactly the error this fork's kit
+  warns about — reporting a lane you did not read. The sub-item is
+  therefore OPEN here and owed to a seat with a browser: load
+  https://pannellum.2plot.dev at phone width, record every console
+  entry by level, and either fix or record it then. What CAN be said
+  from here is that nothing in this round touched the scripts
+  involved.
+
+- **(e) shipped CSS/JS are not minified**, deliberately. The wire
+  serves them compressed and the CSS+JS this repo ships is 52 KB
+  before compression — `assets/` is 5.3 MB in total, but 4.9 MB of
+  that is `assets/tilesets/`, the panorama tiles the DOCUMENTED
+  COMPONENT loads, which are already-compressed JPEG and which a
+  minifier cannot touch. A build step would add a stage to every
+  deploy for a saving the transfer encoding has already taken, and
+  would put a generated file between a reader and the stylesheet a
+  human wrote. Revisit if the CSS+JS half grows past a few hundred
+  KB. Item 6(g)'s cache lifetime is the change that actually moves
+  bytes on this host, and it ships in this round.
+
 ## Byte-owned paths
 
 Paths this fork owns byte-for-byte. The F3b fan-out never overwrites

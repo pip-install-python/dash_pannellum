@@ -498,6 +498,23 @@ if IS_FLASK:
         except Exception:
             pass
 
+    @app.server.after_request
+    def _asset_cache_lifetime(response):
+        """Give /assets/ a lifetime (1.6.44 item 6g). See lib/static_cache.
+
+        The Flask half. This host serves FastAPI in production, so the lane
+        that matters is StaticCacheMiddleware in lib/asgi_middleware — this
+        one exists so the two lanes cannot answer differently for the same
+        file, and so a fork or a local run on Flask is not silently
+        un-cached.
+        """
+        from lib.static_cache import cache_control_for
+
+        value = cache_control_for(_flask_request.path)
+        if value and response.status_code == 200:
+            response.headers["Cache-Control"] = value
+        return response
+
 elif BACKEND == "quart":
     from quart import request as _quart_request
 
