@@ -499,3 +499,78 @@ def test_the_rule_names_why_it_bites_on_this_host_specifically():
     rule = rule.split("\n- ", 1)[0]
     assert "llms_version" in rule
     assert "requirements.txt" in rule
+
+
+# ------------------------- detects over prose (1.6.44 item 13) --
+
+
+KIT_FRAGMENTS = (
+    "measured on a green push",
+    "corpus is non-empty",
+    "when a lane disagrees",
+    "verify the artifact the claim is about",
+)
+
+
+def _flat_kit() -> str:
+    return " ".join((REPO / ".claude" / "CLAUDE.md").read_text().split()).lower()
+
+
+def test_the_1_6_43_item_3_fragments_are_all_present_read_properly():
+    """Item 13's acceptance, on this tree.
+
+    Read FLATTENED and CASE-INSENSITIVELY, which is the whole point: three of
+    these four also answer to a plain `grep -ci`, and one does not.
+    """
+    flat = _flat_kit()
+    missing = [f for f in KIT_FRAGMENTS if f not in flat]
+    assert missing == [], f"traps missing from the kit: {missing}"
+
+
+def test_the_naive_detect_really_does_get_this_wrong_here():
+    """The measurement behind the rule, pinned so nobody re-derives it.
+
+    `grep -ci "measured on a green push"` over this file returns 0 for the
+    LEAFLET TRAP that actually carries the claim, because the phrase wraps a
+    line and has `**` emphasis inside it: `**measured on a GREEN\n  push**`.
+
+    The file as a whole now answers 1 — and only because the item-13 trap
+    added below QUOTES the fragment while explaining that the grep fails.
+    That is item 13 recursing on itself: the documentation of a detect's
+    failure is the thing that makes the detect pass. So the assertion is
+    scoped to the lines that make the CLAIM, not to the file.
+    """
+    lines = (REPO / ".claude" / "CLAUDE.md").read_text().lower().splitlines()
+    fragment = "measured on a green push"
+
+    matching = [i for i, ln in enumerate(lines) if fragment in ln]
+    # Every line-oriented match must be inside the item-13 trap, i.e. a line
+    # that is TALKING ABOUT the grep rather than carrying the trap.
+    for i in matching:
+        assert "grep" in lines[i], (
+            f"line {i + 1} carries the fragment unwrapped outside the "
+            "item-13 trap — the formatting-bound example is now stale"
+        )
+
+    leaflet = [ln for ln in lines if "which branch render actually builds" in ln]
+    assert leaflet, "the leaflet trap is gone from the kit entirely"
+    assert fragment not in " ".join(leaflet), (
+        "the leaflet trap's own line now matches a line-oriented read"
+    )
+    assert fragment in _flat_kit(), "the trap itself is gone, not just wrapped"
+
+
+def test_the_rule_names_all_three_shapes():
+    """Comments, case, and formatting. A rule that names only the first is
+    the half-measure the item is about."""
+    flat = _flat_kit()
+    assert "strips comments **and strings**".replace("*", "") in flat.replace("*", "")
+    assert "ast.parse" in flat
+    assert "flattens whitespace" in flat
+    assert "case-insensitively" in flat
+
+
+def test_the_progression_is_written_down_not_just_the_verdict():
+    flat = _flat_kit()
+    assert "raw grep -> comment strip -> `ast.parse`".lower() in flat or (
+        "raw grep" in flat and "comment strip" in flat)

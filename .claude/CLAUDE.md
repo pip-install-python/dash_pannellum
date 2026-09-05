@@ -309,3 +309,33 @@ they win.
   every workflow file in this repo. A test that reads triggers must try
   both keys — one that catches the KeyError and moves on asserts
   nothing at all.
+- A DETECT OVER PROSE PARSES, OR IT STRIPS COMMENTS **AND STRINGS** —
+  and over Markdown it FLATTENS WHITESPACE and reads CASE-INSENSITIVELY
+  (1.6.44 item 13). Three shapes, all of which produce a confident
+  wrong answer:
+  (1) a raw grep matches the COMMENT explaining the absence of the
+      thing it hunts. Reproduced in this round: the item-6 menu pin
+      searched for `trigger="hover"` and went red on the comment above
+      the fix describing the defect it replaced. Stripping comments is
+      NOT the fix — a live DOCSTRING is a string, not a comment, and
+      passes a comment strip untouched. The progression is raw grep ->
+      comment strip -> `ast.parse`, and only the third is right: walk
+      for ClassDef/FunctionDef names and Name/Attribute ids, then
+      assert the parse found definitions at all, so an unreadable file
+      cannot pass as a clean one.
+  (2) case. A fragment written in a spec's emphasis caps and shipped in
+      sentence case reads 0 both ways round.
+  (3) FORMATTING. Measured on THIS repo 2026-09-05, and it is the
+      instance worth remembering because the trap was correctly ported
+      and the detect still said no: SYNC-1.6.43's
+      `grep -ci "measured on a green push" .claude/CLAUDE.md` returns
+      **0** here, because the phrase wraps a line and carries `**`
+      emphasis inside it — `**measured on a GREEN\n  push**`. Flattened
+      to single spaces it is 1, as are the other three fragments of
+      that item. Flatten whitespace before matching prose; a Markdown
+      fragment's line breaks are the renderer's, not the author's.
+  Why this class recurs: a good comment explains the absence of the
+  thing a detect hunts, so the better-documented the code, the more
+  reliably a raw grep reports the defect it documents the absence of.
+  The detects most likely to be wrong are the ones on the
+  best-explained code.
