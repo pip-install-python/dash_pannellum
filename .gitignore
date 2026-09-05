@@ -176,3 +176,12 @@ KICKOFF-*.md
 # Flask-Session server-side session store — created at runtime whenever
 # Clerk is configured (lib/auth.py). Never source.
 flask_session/
+
+# The visitor-key salt (1.6.44 item 16). Generated at runtime beside the
+# ledger when ANALYTICS_VISITOR_SALT is unset. It is KEY MATERIAL: committing
+# it would make every visitor_key this host writes computable by anyone with
+# the repo, which is the whole property the hash provides. Ignored in the
+# SAME commit that introduces it — a salt that reaches one push has to be
+# rotated, not un-committed.
+.visitor_salt
+

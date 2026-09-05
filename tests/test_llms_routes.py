@@ -311,9 +311,24 @@ def test_healthz_geo_block_is_counts_not_codes():
         block = payload["geo"]
         assert isinstance(block["configured"], bool)
         assert isinstance(block["denied"], int), "counts, never country codes"
-        assert not any(
-            isinstance(v, (list, tuple)) for v in block.values()
-        ), "the denylist's country codes must never reach this payload"
+
+        # The rule is NO COUNTRY CODES, and it used to be enforced by
+        # forbidding every list-shaped value — a proxy that held only while
+        # the block had no legitimate list in it. 1.6.44 item 16 adds one:
+        # `headers_seen`, the visitor-location HEADER NAMES this process has
+        # received, which is how an operator learns whether the zone's
+        # transform is on without reading a deploy log. So the assertion now
+        # says what it always meant, and says it about every value.
+        allowed_lists = {"headers_seen"}
+        for name, value in block.items():
+            if isinstance(value, (list, tuple)):
+                assert name in allowed_lists, (
+                    f"unexpected list on the geo block: {name}={value!r} — "
+                    "the denylist's country codes must never reach this payload"
+                )
+        for header in block.get("headers_seen", []):
+            assert header.startswith("cf-"), header
+            assert len(header) > 3, "a two-letter entry would be a country code"
 
 
 # ---------------------------------------------------------------------------
