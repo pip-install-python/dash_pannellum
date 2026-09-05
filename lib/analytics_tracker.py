@@ -658,16 +658,24 @@ def _vendor_class_from_registry(vendor_key):
     same registry ``classify()`` does. It exists only for the version window
     where the classification carries a vendor and no class.
 
-    THAT WINDOW IS NOT THIS HOST, and the difference is two surfaces the
-    fleet note conflates. Measured here at dimll 2.8.0: ``classify()``
-    ALREADY returns ``vendor_class`` — claudebot 'training', googlebot
-    'traditional' — while ``_ledger.EVENT_FIELDS`` has 15 keys and no
-    ``vendor_class`` at all, and it is the EVENT that gains it at 2.9.2. So
-    the null classes the fleet measured came from the read-event path
-    dropping the key at the app boundary, not from ``classify()`` withholding
-    it. The prefer branch below is the live one here and this fallback is
-    dormant — kept because it is the right shape for a fork on an older
-    wheel, and because it costs nothing when the value is present.
+    THE FLEET NOTE CONFLATES TWO SURFACES, and this fork can see both of
+    them at once because its requirements line is a `>=` floor rather than a
+    pin. Measured on two wheels, 2026-09-05, each imported and its
+    ``__file__`` printed:
+
+        dimll 2.8.0  (a stale local venv):  classify() -> vendor_class
+                     'training'; EVENT_FIELDS n=15, NO vendor_class
+        dimll 2.10.0 (what every ci.yml leg resolves through `>=2.8.0`):
+                     classify() -> 'training'; EVENT_FIELDS n=16, WITH
+                     vendor_class
+
+    So ``classify()`` has carried the class at both versions, and it is the
+    EVENT that gains it at 2.9.2 — the null classes the fleet measured came
+    from the read-event path dropping the key at the app boundary, not from
+    the classifier withholding it. The prefer branch below is the live one on
+    both wheels and this fallback is dormant on both; it is kept because it
+    is the right shape for a fork on an older wheel and costs nothing when
+    the value is present.
 
     A hand-written map would be the other defect entirely — this repo's kit
     carries a whole paragraph about the User-Agent list that lived in this

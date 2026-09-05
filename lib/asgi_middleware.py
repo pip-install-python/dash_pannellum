@@ -56,15 +56,31 @@ class HeadAsGetMiddleware:
     sit above the router. Pure ASGI rather than ``BaseHTTPMiddleware`` so it
     neither buffers the response nor breaks streaming.
 
-    RETIREMENT IS GATED ON THE PIN, NOT THE CALENDAR (item 2's own words).
-    dash-improve-my-llms 2.9.4 walks the router and adds HEAD wherever GET
-    is allowed, Dash's lifespan-registered catch-all included; at that
-    version the template measured 15/15 without this class and retired it.
-    This fork's requirements line is held at ``>=2.8.0`` by the 1.6.44 seat
-    rider until the fleet pin lands at 1.6.45, and 2.8.0 is what this venv
-    resolves — so the shim is load-bearing here. Delete it in the same
-    commit that pins ``==2.9.4``, and re-measure the fifteen pairs before
-    believing the deletion, with the disable proved non-vacuous.
+    RETIREMENT IS GATED ON THE VERSION PRODUCTION SERVES, NOT ON THE
+    CALENDAR AND NOT ON WHAT CI RESOLVES. dash-improve-my-llms 2.9.4 walks
+    the router and adds HEAD wherever GET is allowed, Dash's
+    lifespan-registered catch-all included.
+
+    BOTH SIDES MEASURED HERE, 2026-09-05, and they disagree — which is the
+    reason this class stays:
+
+        dimll 2.8.0  (a stale local venv):        11/15 without the shim
+        dimll 2.10.0 (every ci.yml leg resolves
+                      this through `>=2.8.0`):    15/15 without the shim
+
+    So on the wheel CI tests, the shim is redundant; on an older wheel it is
+    load-bearing. NOBODY KNOWS WHICH ONE PRODUCTION RUNS — this fork's
+    requirements line is a `>=` floor held there by the 1.6.44 seat rider, a
+    floor cannot pull a new wheel through a cached Docker layer, and until
+    the `llms_version` field shipped in this same round reaches the wire, no
+    surface names the version this host serves. A shim that is harmless on
+    the new wheel and load-bearing on the old one is kept while that
+    question is open.
+
+    Delete it only after reading `llms_version` off production's `/healthz`
+    and confirming >= 2.9.4 there, and re-measure the fifteen pairs against
+    THAT version before believing the deletion, with the disable proved
+    non-vacuous.
 
     The re-dispatch is a full ``GET``: same status, same headers, same work.
     The body is dropped here so the response is empty at every layer under

@@ -15,9 +15,14 @@ and ``/`` answered 405 to a browser UA while answering 200 to a crawler one,
 because the package's prerender replies above the router. That split is why
 a single-UA HEAD check reads green on a broken host.
 
-Retirement is gated on the PIN, not the calendar. When this fork's
-requirements line moves to ``==2.9.4`` at 1.6.45, re-run this file with the
-middleware disabled and expect 15/15 before deleting anything.
+Retirement is gated on WHAT PRODUCTION SERVES, not on the calendar and not
+on what CI resolves — a distinction the per-leg verification forced. Every
+ci.yml leg resolves dimll 2.10.0 through the `>=2.8.0` floor, and at 2.10.0
+parity is 15/15 WITHOUT the shim; at the 2.8.0 in a stale local venv it is
+11/15. A `>=` floor does not determine what a cached Docker layer installed,
+so until `llms_version` reaches the wire nothing names production's version.
+Read it there first, then re-measure the fifteen pairs against that version
+with the disable proved non-vacuous, and only then delete anything.
 """
 import pytest
 
@@ -106,5 +111,31 @@ def test_the_shims_retirement_is_gated_on_the_pin_not_the_date():
 
     src = (REPO_ROOT / "lib" / "asgi_middleware.py").read_text()
     flat = " ".join(src.split())
-    assert "GATED ON THE PIN, NOT THE CALENDAR" in flat
+    assert "GATED ON THE VERSION PRODUCTION SERVES" in flat
     assert "2.9.4" in flat, "the version IS the whole content of the claim"
+
+
+def test_the_gate_is_productions_version_not_cis():
+    """The correction the per-leg runs forced, pinned so it is not lost.
+
+    The first version of this module's docstring said "2.8.0 is what this
+    venv resolves — so the shim is load-bearing here", and that was a claim
+    about a stale local venv, not about the artifact anyone deploys. Every
+    ci.yml leg resolves 2.10.0 through the same `>=2.8.0` floor, and at
+    2.10.0 parity is 15/15 WITHOUT the shim.
+
+    So the retirement gate cannot be "what my venv says" or "what CI says".
+    It is what PRODUCTION serves, and until `llms_version` reaches the wire
+    nothing names that. The kit and this module must both say so.
+    """
+    from conftest import REPO_ROOT
+
+    src = (REPO_ROOT / "lib" / "asgi_middleware.py").read_text()
+    flat = " ".join(src.split())
+    assert "GATED ON THE VERSION PRODUCTION SERVES" in flat
+    assert "llms_version" in flat, (
+        "the gate does not name the field that answers it"
+    )
+    # Both measurements must survive, or the next reader re-derives them.
+    assert "11/15" in flat and "15/15" in flat
+    assert "2.10.0" in flat and "2.8.0" in flat

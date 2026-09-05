@@ -273,8 +273,19 @@ prevent, not the fix.
     replying above the router being exactly the shadow that hides this
     defect from any single-UA check.
 
-    A sync that reads item 2 and deletes this class must first move
-    the requirements line and re-measure the fifteen pairs, with the
+    RE-MEASURED ON THE LEG VENVS the same day, and the two readings
+    disagree: at dimll **2.10.0**, which every ci.yml leg resolves
+    through the `>=2.8.0` floor, parity is **15/15 without the shim**;
+    at 2.8.0 it is 11/15. The shim is therefore redundant on the wheel
+    CI tests and load-bearing on an older one, and NOBODY KNOWS WHICH
+    PRODUCTION RUNS — a `>=` floor does not determine what a cached
+    Docker layer installed. It is kept while that question is open,
+    because it is harmless on the new wheel and holds `/healthz` up on
+    the old one.
+
+    A sync that reads item 2 and deletes this class must first read
+    `llms_version` off production's `/healthz`, confirm >= 2.9.4 THERE,
+    and re-measure the fifteen pairs against that version with the
     disable proved non-vacuous. `tests/test_head_parity.py` holds all
     of it, and `tests/conftest.py` gained `Client.head()` — without
     which the suite structurally could not see this.
