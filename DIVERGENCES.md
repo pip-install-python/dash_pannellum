@@ -12,6 +12,15 @@ boundary between design and drift:
   line: what differs, why, and what the template would otherwise do.
 - An empty list is a statement too: it means this repo intends to
   match the template exactly.
+- Two kinds of entry live here, and the second is the one forks keep
+  losing (1.6.44 item 9). A DIVERGENCE says "this repo differs, on
+  purpose". A RECORDED CONVENTION says "this repo MATCHES, and the
+  match is a decision" — most often something deliberately REMOVED or
+  deliberately not added. Nothing in a diff distinguishes the second
+  from an accident, so a sync restores it and nobody notices; the
+  entry is what makes the absence legible. Both are read by the
+  fan-out machinery and by sync authors, which is why they belong in
+  this file rather than in a test docstring — neither reads those.
 
 Fleet precedents for what belongs here: flexlayout's own-source
 `_build_llms_doc` dedup and app-key sourcing; flows' own
@@ -269,6 +278,44 @@ prevent, not the fix.
     disable proved non-vacuous. `tests/test_head_parity.py` holds all
     of it, and `tests/conftest.py` gained `Client.head()` — without
     which the suite structurally could not see this.
+
+## Recorded conventions (not divergences)
+
+Guard entries. Every line here documents something this repo MATCHES
+or deliberately does NOT carry — an absence a sync would otherwise
+read as drift and helpfully undo. Adding one costs a sentence; the
+alternative costs a fortnight of a defect walking back in.
+
+- **There is no User-Agent list in this app, and there must not be.**
+  `dash_improve_my_llms.classify()` is the one classifier. The tracker
+  carried a local list for a year; it filed ClaudeBot as *search*,
+  still named the retired `anthropic-ai` / `claude-web` tokens, and
+  counted every UA-less client as a human — on every host in the
+  fleet. `tests/test_analytics_classifier.py` greps the module for the
+  old tokens and goes red if one returns. A missing token is a
+  pushback to the package seat, never a table here. The same rule now
+  covers `vendor_class` (1.6.44 item 8): prefer the package's value,
+  derive from the package's REGISTRY when absent, never from a local
+  map.
+- **Content images carry width/height and NOT `loading`/`decoding`**
+  (1.6.44 item 6f). Neither is a prop of dash 4.4.1's `html.Img` and
+  Dash RAISES on an unknown one — adding them takes the whole site
+  down at import, not at render. `tests/test_a11y_block.py` pins the
+  reason and goes red the day Dash learns them.
+- **The ledger's `reads` table is never pruned by count** (1.6.44
+  item 21). A row cap on a table written by crawlers deletes the
+  oldest evidence first, which is the evidence a retention window
+  exists to keep. `visits` KEEPS its cap. See the entry under this
+  repo's divergences if the two ever part.
+- **`probe_ua()` refuses an engineless probe** (1.6.44 item 4). A UA
+  carrying only `2plot-internal/probe` classifies crawler-lane, so an
+  engineless probe silently swaps the document out from under a
+  browser-lane assertion. The refusal is the mechanism, not a
+  nicety — do not relax it into a default.
+
+Note what is NOT in this list: `HeadAsGetMiddleware`. The template
+records its RETIREMENT here; this fork has it, and that is a
+divergence with its own numbered entry below, gated on the dimll pin.
 
 ## Recorded a11y decisions (1.6.44 item 6)
 

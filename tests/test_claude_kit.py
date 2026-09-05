@@ -382,3 +382,120 @@ def test_divergences_posture_fence_is_wellformed():
                     "wrong about this repo's own tree"
                 )
                 break
+
+
+# ------------------------------- recorded conventions (1.6.44 item 9) --
+
+
+def test_divergences_has_the_recorded_conventions_subsection():
+    """Item 9's detect.
+
+    A DIVERGENCE says "this repo differs, on purpose". A RECORDED CONVENTION
+    says "this repo matches, and the match is a decision" — usually something
+    deliberately removed. Nothing in a diff tells the second from an
+    accident, so without the entry a sync restores it and nobody notices.
+    """
+    text = (REPO / "DIVERGENCES.md").read_text()
+    assert "## Recorded conventions (not divergences)" in text
+
+
+def test_the_header_explains_both_kinds_of_entry():
+    """Contract-class: the FILE's own text is what sync authors and the
+    fan-out read. A rule that lives only in a test docstring is invisible to
+    both of them."""
+    text = (REPO / "DIVERGENCES.md").read_text()
+    intro = text.split("## This repo's divergences", 1)[0]
+    assert "RECORDED CONVENTION" in intro
+    assert "DIVERGENCE" in intro
+
+
+def test_the_guard_entries_are_under_it_and_name_their_code():
+    """Acceptance: this repo's own guard entries moved under the heading, and
+    each one names the thing a sync would restore."""
+    text = (REPO / "DIVERGENCES.md").read_text()
+    section = text.split("## Recorded conventions (not divergences)", 1)[1]
+    section = section.split("\n## ", 1)[0]
+
+    for needle in ("User-Agent list", "html.Img", "reads", "probe_ua"):
+        assert needle in section, f"guard entry for {needle} is not recorded"
+
+    entries = [ln for ln in section.splitlines() if ln.startswith("- **")]
+    assert len(entries) >= 4, f"only {len(entries)} guard entries"
+
+
+def test_the_shim_is_a_divergence_here_and_not_a_recorded_convention():
+    """Where this fork parts from the template's own item 9 entry, ON PURPOSE.
+
+    The template records HeadAsGetMiddleware's RETIREMENT as a guard entry —
+    "gone and must not come back". This repo HAS the class (item 2: it was
+    never ported here, `/healthz` was 405ing on HEAD, and retirement is gated
+    on a dimll pin this fork does not carry yet). Copying the template's
+    guard entry across would have recorded the opposite of the truth, and a
+    future sync reading it would delete a shim that is holding /healthz up.
+    """
+    text = (REPO / "DIVERGENCES.md").read_text()
+    conventions = text.split("## Recorded conventions (not divergences)", 1)[1]
+    conventions = conventions.split("\n## ", 1)[0]
+    entries = "\n".join(ln for ln in conventions.splitlines()
+                        if ln.startswith("- **"))
+    assert "HeadAsGetMiddleware" not in entries, (
+        "the template's retirement entry was copied onto a fork that has the "
+        "class — the record now says the opposite of the tree"
+    )
+
+    import ast
+
+    middleware = REPO / "lib" / "asgi_middleware.py"
+    tree = ast.parse(middleware.read_text())
+    defined = {node.name for node in ast.walk(tree)
+               if isinstance(node, (ast.ClassDef, ast.FunctionDef))}
+    assert defined, "parsed no definitions at all — the AST read swept nothing"
+    assert "HeadAsGetMiddleware" in defined, (
+        "the shim is gone from a fork whose requirements line is still a "
+        "floor — re-measure the fifteen HEAD/GET pairs before believing it"
+    )
+
+
+def test_every_guard_entry_points_at_something_that_still_exists():
+    """A guard entry naming code nobody has any more costs the reader's
+    afternoon — the same rule the kit applies to traps."""
+    from dash import html
+
+    assert (REPO / "lib" / "analytics_tracker.py").exists()
+    assert (REPO / "tests" / "test_analytics_classifier.py").exists()
+    assert (REPO / "tests" / "test_a11y_block.py").exists()
+    assert "loading" not in html.Img()._prop_names
+    from lib.constants import probe_ua  # noqa: F401
+
+
+# ------------------------------ acceptance at the version (1.6.44 item 10) --
+
+
+def test_the_acceptance_output_rule_is_in_the_kit():
+    """Item 10's detect. An acceptance is a claim about a tree AT A VERSION,
+    and the version has to be in the sentence carrying the number."""
+    kit = (REPO / ".claude" / "CLAUDE.md").read_text()
+    assert "PRINT THE RESOLVED VERSION BESIDE THE RESULT" in kit
+    rule = kit.split("PRINT THE RESOLVED VERSION BESIDE THE RESULT", 1)[1]
+    rule = rule.split("\n- ", 1)[0]
+    assert "__file__" in rule, (
+        "the rule must say HOW to resolve it — import and print the path, "
+        "not read requirements.txt"
+    )
+    assert "actionlint" in rule and "shellcheck" in rule, (
+        "the local-vs-CI half of the rule is missing"
+    )
+
+
+def test_the_rule_names_why_it_bites_on_this_host_specifically():
+    """A fleet rule a fork cannot connect to its own tree gets skimmed.
+
+    Here it has teeth for a concrete reason: the requirements line is a `>=`
+    floor, so the file cannot say what a cached Docker layer installed, and
+    until item 1 landed no surface anywhere named production's version.
+    """
+    kit = (REPO / ".claude" / "CLAUDE.md").read_text()
+    rule = kit.split("PRINT THE RESOLVED VERSION BESIDE THE RESULT", 1)[1]
+    rule = rule.split("\n- ", 1)[0]
+    assert "llms_version" in rule
+    assert "requirements.txt" in rule
