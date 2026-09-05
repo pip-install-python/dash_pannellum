@@ -124,3 +124,93 @@ def test_the_posture_fence_declares_the_road():
     text = (REPO / "DIVERGENCES.md").read_text()
     fence = re.search(r"^```yaml posture[ \t]*\n(.*?)^```", text, re.M | re.S).group(1)
     assert re.search(r"^deploy:\s*release-branch\s*$", fence, re.M), fence
+
+
+# ------------------------- the double-run trap (1.6.44 item 12) --
+
+
+CI = REPO / ".github" / "workflows" / "ci.yml"
+
+
+def _ci() -> dict:
+    return yaml.safe_load(CI.read_text())
+
+
+def _triggers(workflow: dict) -> dict:
+    """PyYAML parses an unquoted `on:` key as the BOOLEAN True.
+
+    This is the trap under the trap: `workflow["on"]` is a KeyError on every
+    workflow in this repo, and a test that caught that and moved on would
+    silently assert nothing. MEASURED, not assumed — the assertion at the end
+    of this module's first use proves which key actually came back.
+    """
+    for key in ("on", True):
+        if key in workflow:
+            return workflow[key] or {}
+    raise AssertionError("workflow declares no triggers at all")
+
+
+def test_pyyaml_really_does_parse_the_on_key_as_a_boolean():
+    """The sub-trap, pinned rather than repeated as folklore.
+
+    If a future PyYAML (or a quoted `"on":` in these files) changes this,
+    the helper above silently starts reading a different key and every
+    trigger assertion below becomes untrustworthy. Better to be told.
+    """
+    parsed = _ci()
+    assert True in parsed and "on" not in parsed, (
+        "the `on:` key no longer parses as the boolean True — _triggers() "
+        "still works, but the trap comment in the kit is now stale"
+    )
+
+
+def test_ci_does_not_also_run_itself_on_a_push_to_main():
+    """clerkhook 44c0c27. CD calls ci.yml; if ci.yml ALSO triggers on
+    push-to-main, both runs resolve to the concurrency group
+    `ci-${{ github.ref }}` with cancel-in-progress, and one is killed at
+    random. When the standalone run wins, CD's `test` is cancelled, `deploy`
+    skips, `release` never moves — and `main` ahead of `release` reads as an
+    ordinary pending push rather than as the accident it is.
+    """
+    triggers = _triggers(_ci())
+    called_by_cd = "uses: ./.github/workflows/ci.yml" in CD.read_text()
+    push = triggers.get("push") or {}
+    branches = (push or {}).get("branches") or []
+
+    assert called_by_cd, (
+        "cd.yml no longer calls ci.yml — this pin's precondition is gone and "
+        "the conditional below would pass over an unjudged deploy"
+    )
+    assert "main" not in branches, (
+        "ci.yml triggers on push-to-main AND is called by cd.yml — the two "
+        "runs share a concurrency group and one dies at random"
+    )
+
+
+def test_the_two_triggers_this_repo_does_declare_are_still_there():
+    """Non-vacuity: a ci.yml with NO triggers would satisfy the check above
+    while being broken in a different way."""
+    triggers = _triggers(_ci())
+    assert "pull_request" in triggers
+    assert "workflow_call" in triggers, (
+        "cd.yml calls this workflow; without workflow_call the call fails"
+    )
+
+
+def test_cd_actually_calls_ci_rather_than_repeating_it():
+    """The other half of the shape: a deploy must not ship something the
+    matrix never judged."""
+    cd = _cd()
+    assert cd["jobs"]["test"]["uses"] == "./.github/workflows/ci.yml"
+    assert "test" in cd["jobs"]["deploy"]["needs"]
+
+
+def test_the_concurrency_groups_cannot_collide():
+    """Belt to the trigger check: even if both ran, they must not share a
+    group. cd.yml's is a constant; ci.yml's is per-ref."""
+    ci_group = _ci()["concurrency"]["group"]
+    cd_group = _cd()["concurrency"]["group"]
+    assert ci_group != cd_group
+    assert _cd()["concurrency"]["cancel-in-progress"] is False, (
+        "a deploy that cancels itself mid-promote leaves release half-written"
+    )
