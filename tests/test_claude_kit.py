@@ -711,3 +711,75 @@ def test_the_sampler_probes_this_host_with_the_fleet_convention():
     assert promote_sampler.PROBE_UA.startswith("curl/"), (
         "an engineless probe classifies crawler-lane (item 4)"
     )
+
+
+# ---------------------------- the launch name (1.6.44 item 23b) --
+
+
+SESSION_NAME = REPO / ".claude" / "session-name"
+
+
+def test_the_session_name_is_this_forks_app_key(app_module):
+    """Item 23b's detect: `cat .claude/session-name` equals the healthz `app`
+    field.
+
+    The VALUE is per-fork and is the reason this file can never be
+    byte-copied by a fan-out: a copy would start every session in the fleet
+    under the template's address.
+    """
+    assert SESSION_NAME.exists(), ".claude/session-name is missing"
+    name = SESSION_NAME.read_text()
+    assert name == name.strip() + "\n" or name == name.strip(), (
+        "session-name carries leading or trailing whitespace beyond one "
+        "newline"
+    )
+    token = name.strip()
+    assert token and " " not in token and "\n" not in token, (
+        f"session-name is not a single trimmed token: {token!r}"
+    )
+
+    # Compared against the BOOTED app, which is the artifact the claim is
+    # about. `health_payload` reads SATELLITE_APP_KEY from the environment,
+    # and on this host that variable is claimed by run.py's fork point via
+    # os.environ.setdefault before any hub-facing import — so a comparison
+    # made without importing run.py reads 'unknown' and would either fail on
+    # a correct tree or, worse, be "fixed" by writing 'unknown' into the
+    # file. The app_module fixture is the environment production has.
+    from lib.health import health_payload
+
+    served = health_payload("flask")["app"]
+    assert served != "unknown", (
+        "SATELLITE_APP_KEY is unset even with run.py imported — the fork "
+        "point in run.py is what claims it, and this repo's kit says never "
+        "to delete that line"
+    )
+    assert token == served, (
+        f"session-name is {token!r} but /healthz reports {served!r}"
+    )
+
+
+def test_the_session_name_survives_a_fresh_checkout():
+    """`.gitignore` allow-lists `.claude/*`, so without an explicit negation
+    this file is written, passes every test run off the working directory,
+    and is INVISIBLE to anyone who clones.
+
+    Asserted against `git ls-files`, which is what a checkout would receive —
+    reading .gitignore would only prove the line is there, not that the file
+    made it in.
+    """
+    import subprocess
+
+    tracked = subprocess.run(
+        ["git", "ls-files", ".claude/session-name"],
+        cwd=REPO, capture_output=True, text=True)
+    assert tracked.stdout.strip() == ".claude/session-name", (
+        "session-name is not tracked — a fresh clone would not have it"
+    )
+
+    ignored = subprocess.run(
+        ["git", "check-ignore", "-q", ".claude/session-name"],
+        cwd=REPO, capture_output=True, text=True)
+    assert ignored.returncode != 0, (
+        ".claude/session-name is still ignored — add !.claude/session-name "
+        "below the .claude/* line"
+    )

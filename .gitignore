@@ -172,6 +172,12 @@ KICKOFF-*.md
 !.claude/CLAUDE.md
 !.claude/settings.json
 !.claude/skills/
+# The launch name (1.6.44 item 23b). Its CONTENT is this fork's own app key,
+# and the allow-list line is what makes it exist in a fresh checkout at all:
+# without it the file is written, passes every test run off the working
+# directory, and is INVISIBLE to anyone who clones. Proved by cloning, not
+# by reading .gitignore.
+!.claude/session-name
 
 # Flask-Session server-side session store — created at runtime whenever
 # Clerk is configured (lib/auth.py). Never source.
