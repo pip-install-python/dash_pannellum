@@ -142,6 +142,53 @@ def analytics_path() -> Path:
                 or _REPO_ROOT / "visitor_analytics.json")
 
 
+def _ledger_persistence_warning() -> None:
+    """Loud when the ledger would not survive a deploy (1.6.44 item 22).
+
+    Mirrors `lib.page_visibility._persistence_warning` deliberately — same
+    shape, same two failure modes, same place in the boot output — because
+    the two stores fail for identical reasons and an operator who has learnt
+    to look for one should find the other beside it. On THIS host that is not
+    an analogy: the `[visibility] WARNING` line is the only acceptance check
+    this repo's memory has ever had for whether the disk is really mounted,
+    and it is owner-only because it lives in a deploy log.
+
+    `analytics_path()` falls back SILENTLY to the repository root, which is
+    the container filesystem and is replaced wholesale on every deploy. The
+    visibility store has warned about exactly this for months; the ledger,
+    which is the more expensive thing to lose, said nothing.
+
+    Pairs with item 20: this says it ONCE at boot, and `/healthz`'s
+    `ledger.persistent` says it CONTINUOUSLY to anyone who asks. The two must
+    agree, and tests/test_ledger_boot_guard.py asserts they do rather than
+    pinning either value on its own.
+    """
+    configured = os.environ.get("TRAFFIC_ANALYTICS_FILE")
+    if not configured:
+        print(
+            f"[analytics] WARNING: TRAFFIC_ANALYTICS_FILE unset — ledger at "
+            f"{analytics_path()} is on the container filesystem and will not "
+            "survive a deploy. Set TRAFFIC_ANALYTICS_FILE=/var/data/"
+            "visitor_analytics.json on the service (render.yaml declares the "
+            "disk, but only a Blueprint sync or a dashboard add makes it "
+            "live).",
+            flush=True,
+        )
+        return
+    path = Path(configured)
+    if str(path).startswith("/var/"):
+        anchor = (Path("/") / path.parts[1] / path.parts[2]
+                  if len(path.parts) > 2 else path.parent)
+        if not os.path.ismount(str(anchor)):
+            print(
+                f"[analytics] WARNING: {anchor} is not a mounted disk on this "
+                "instance — the ledger will vanish on the next deploy. An app "
+                "can mkdir a path under /var and everything works until the "
+                "deploy that replaces the filesystem.",
+                flush=True,
+            )
+
+
 def _lower_headers(headers) -> dict:
     """Normalise any header mapping (Flask, Starlette, dict) to lowercase."""
     if not headers:
@@ -545,7 +592,9 @@ class AnalyticsTracker:
 
             data["visits"] = _prune(visits)
             read_rows.extend(reads)
-            data["reads"] = _prune(read_rows, stamp=_read_stamp)
+            # cap=False: reads keep every row inside the retention window
+            # (item 21). The count cap is the visits table's rule.
+            data["reads"] = _prune(read_rows, stamp=_read_stamp, cap=False)
 
             # Atomic replace: a crash mid-write can't leave a truncated ledger.
             tmp = path.with_suffix(path.suffix + ".tmp")
@@ -574,12 +623,30 @@ def _read_stamp(r):
         return ""
 
 
-def _prune(rows, stamp=_visit_stamp):
-    """Drop rows older than the retention window, then cap the total."""
+def _prune(rows, stamp=_visit_stamp, cap=True):
+    """Drop rows older than the retention window; cap the total only if asked.
+
+    THE COUNT CAP IS FOR `visits` ONLY (1.6.44 item 21, measured on llms,
+    muicharts and pannellum — this host is one of the three). It applied to
+    BOTH tables, and on a corpus served to every crawler in the world the
+    READ table fills fastest — so the oldest read rows went first and the
+    ledger ate its own history while its retention window said the rows
+    should still be there. A cap that silently deletes inside the window is
+    not a cap, it is a different retention policy nobody wrote down.
+
+    `reads` prune by DATE only. If the read table grows beyond what a host
+    can hold, the answer is a shorter retention window — a number an operator
+    sets and can see — not a silent truncation.
+
+    THE CHOICE OF RULE PER TABLE LIVES AT THE CALL SITE, and that is why
+    `tests/test_read_ledger.py` SOURCE-pins it by AST: a behavioural test
+    cannot see a `cap=True` restored above it, because the corpus it would
+    need is 20,001 rows and nobody writes that test twice.
+    """
     if RETENTION_DAYS > 0:
         cutoff = (datetime.now() - timedelta(days=RETENTION_DAYS)).isoformat()
         rows = [v for v in rows if stamp(v) >= cutoff]
-    if MAX_VISITS > 0 and len(rows) > MAX_VISITS:
+    if cap and MAX_VISITS > 0 and len(rows) > MAX_VISITS:
         rows = rows[-MAX_VISITS:]
     return rows
 
@@ -650,6 +717,8 @@ def _classify(user_agent, client_ip=None):
         "verified": c.get("verified") or "n/a",
     }
 
+
+_ledger_persistence_warning()
 
 # Global tracker instance
 tracker = AnalyticsTracker()

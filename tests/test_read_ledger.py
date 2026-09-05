@@ -140,3 +140,106 @@ def test_a_pre_1_6_34_ledger_gains_reads_without_losing_visits(tmp_path):
     t.flush()
     data = json.loads(p.read_text())
     assert len(data["visits"]) == 1 and len(data["reads"]) == 1
+
+
+# --------------------- reads are never pruned by count (1.6.44 item 21) --
+
+
+def _read_row(days_ago, i):
+    from datetime import datetime, timedelta
+
+    ts = (datetime.now() - timedelta(days=days_ago)).timestamp()
+    return {"ts": ts, "path": f"/p{i}/llms.txt", "kind": "read",
+            "verdict": "served", "ua": "Mozilla/5.0 (compatible; GPTBot/1.2)"}
+
+
+def test_reads_keep_every_row_inside_the_window_and_drop_the_dated_one():
+    """Item 21's acceptance, at the exact boundary.
+
+    20,001 read rows inside the retention window plus one outside: 20,001
+    must remain and the dated one must be gone. The cap is 20,000, so a
+    corpus one row over is the smallest one that can tell the two rules
+    apart.
+    """
+    from lib.analytics_tracker import MAX_VISITS, _prune, _read_stamp
+
+    assert MAX_VISITS == 20000, (
+        f"the cap moved to {MAX_VISITS}; this corpus is sized against it"
+    )
+    rows = [_read_row(1, i) for i in range(MAX_VISITS + 1)]
+    rows.append(_read_row(3650, 999999))          # far outside the window
+
+    kept = _prune(rows, stamp=_read_stamp, cap=False)
+    assert len(kept) == MAX_VISITS + 1, len(kept)
+    assert all(r["path"] != "/p999999/llms.txt" for r in kept), (
+        "the dated row survived — the retention window is not being applied"
+    )
+
+
+def test_the_same_corpus_pruned_WITH_the_cap_loses_an_in_window_row():
+    """PROVE THE TEST RED on the pre-item behaviour before believing it.
+
+    The item says so explicitly, and it is the difference between a test that
+    measures the fix and a test that would have passed before it. With
+    cap=True the same corpus loses a row the retention window says should
+    still be there — which is the defect, reproduced.
+    """
+    from lib.analytics_tracker import MAX_VISITS, _prune, _read_stamp
+
+    rows = [_read_row(1, i) for i in range(MAX_VISITS + 1)]
+    rows.append(_read_row(3650, 999999))
+
+    capped = _prune(rows, stamp=_read_stamp, cap=True)
+    assert len(capped) == MAX_VISITS, len(capped)
+    # And the row it lost is the OLDEST in-window one — the ledger eating its
+    # own history first.
+    assert capped[0]["path"] != "/p0/llms.txt", (
+        "the cap did not drop from the front; re-read _prune before trusting "
+        "either direction of this pair"
+    )
+
+
+def test_visits_KEEP_the_count_cap():
+    """The mirror. "reads prune by date" that also stopped capping visits
+    would be a different change, and a one-sided test cannot tell them
+    apart."""
+    from datetime import datetime, timedelta
+
+    from lib.analytics_tracker import MAX_VISITS, _prune
+
+    stamp = (datetime.now() - timedelta(days=1)).isoformat()
+    visits = [{"timestamp": stamp, "path": f"/{i}"}
+              for i in range(MAX_VISITS + 5)]
+    assert len(_prune(visits)) == MAX_VISITS
+
+
+def test_the_call_site_is_source_pinned_per_table():
+    """SOURCE-pinned by AST, per the item's own note.
+
+    The choice of rule per table lives at the CALL, and a behavioural test
+    cannot see a `cap=True` restored above it — the corpus that would catch
+    it is 20,001 rows, and nobody writes that test twice.
+    """
+    import ast
+
+    from conftest import REPO_ROOT
+
+    tree = ast.parse((REPO_ROOT / "lib" / "analytics_tracker.py").read_text())
+    calls = [n for n in ast.walk(tree)
+             if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "_prune"]
+    assert len(calls) == 2, f"{len(calls)} _prune call sites, expected 2"
+
+    by_table = {}
+    for call in calls:
+        kwargs = {kw.arg: kw.value for kw in call.keywords}
+        stamp = getattr(kwargs.get("stamp"), "id", "_visit_stamp")
+        cap = kwargs.get("cap")
+        by_table[stamp] = None if cap is None else cap.value
+
+    assert by_table.get("_read_stamp") is False, (
+        "the reads call site does not pass cap=False — reads are being "
+        "pruned by count again"
+    )
+    assert by_table.get("_visit_stamp", "default") in (None, True), (
+        "the visits call site stopped capping"
+    )
