@@ -553,3 +553,124 @@ def test_run_py_pins_the_funnel_public(app_module):
     the regression net for those pins."""
     for path in ("/", "/getting-started", "/llms-small.txt", "/llms-full.txt"):
         assert page_tiers.local_tier(path) == "public", path
+
+
+# ------------------- a verify verdict is not authorisation (1.6.44 item 18) --
+
+
+def test_the_only_verify_caller_names_the_host_held_secret_beside_it():
+    """Item 18's acceptance: any route consulting `verify` for access NAMES
+    the host-held secret beside it, or is documented as metering-only.
+
+    Source-pinned rather than behavioural, deliberately. A behavioural suite
+    cannot see a restored default that pre-empts its own guard, and it cannot
+    see documentation going missing at all — which is the thing this item
+    asks for.
+    """
+    import ast
+
+    from conftest import REPO_ROOT
+
+    src = (REPO_ROOT / "lib" / "access.py").read_text()
+    tree = ast.parse(src)
+
+    # PARSED: find where verify is actually called, not where it is discussed.
+    callers = [node for node in ast.walk(tree)
+               if isinstance(node, ast.Call)
+               and getattr(node.func, "attr", None) == "verify"]
+    assert len(callers) == 1, (
+        f"{len(callers)} calls to hub verify in lib/access.py — item 18 "
+        "requires each one to be documented; this pin knows about one"
+    )
+
+    # The comment block above the single call must name the secret and the
+    # contract. Read from the source text, because that is where the
+    # documentation lives.
+    line = callers[0].lineno
+    preceding = "\n".join(src.splitlines()[max(0, line - 40):line])
+    assert "CROSS_APP_WEBHOOK_SECRET" in preceding, (
+        "the host-held secret is not named beside the verify call"
+    )
+    assert "metering" in preceding.lower()
+    assert "MACHINE LANE ONLY" in preceding, (
+        "the call must state that human and admin access never reach it"
+    )
+
+
+def test_every_fallback_around_the_verify_call_is_closed():
+    """SOURCE-pinned, per the item's own note, and then exercised.
+
+    The incident was an all-unknown-tier fallback that answered "allow". The
+    four fallbacks here must go the other way, and a source pin is what
+    catches a restored default that a behavioural test would sail past.
+    """
+    import ast
+
+    from conftest import REPO_ROOT
+
+    tree = ast.parse((REPO_ROOT / "lib" / "access.py").read_text())
+    check = next(node for node in ast.walk(tree)
+                 if isinstance(node, ast.FunctionDef) and node.name == "check")
+
+    # The no-key branch returns "gated", not "allow".
+    returns = [node.value.value for node in ast.walk(check)
+               if isinstance(node, ast.Return)
+               and isinstance(node.value, ast.Constant)]
+    assert "gated" in returns, "no closed fallback in check() at all"
+    assert returns.count("allow") <= 3, (
+        f"check() has {returns.count('allow')} literal allow returns — each "
+        "one is a lane that does not consult the gate"
+    )
+
+    # And hub_client's own fallbacks.
+    hub = ast.parse((REPO_ROOT / "lib" / "hub_client.py").read_text())
+    verify = next(node for node in ast.walk(hub)
+                  if isinstance(node, ast.FunctionDef) and node.name == "verify")
+    verify_returns = [node.value.value for node in ast.walk(verify)
+                      if isinstance(node, ast.Return)
+                      and isinstance(node.value, ast.Constant)]
+    assert verify_returns, "verify() returns nothing constant — re-read it"
+    assert "allow" not in verify_returns, (
+        "hub_client.verify has a literal `allow` fallback — that is the "
+        "2026-09-02 incident's exact shape"
+    )
+
+
+def test_verify_is_closed_when_this_host_holds_no_secret(monkeypatch):
+    """The behavioural half, exercised with the secret ABSENT — which is the
+    caller production has when nothing is configured, and the branch a test
+    that always sets the secret would never reach."""
+    from lib import hub_client
+
+    monkeypatch.delenv("CROSS_APP_WEBHOOK_SECRET", raising=False)
+    assert hub_client.enabled() is False
+    assert hub_client.verify("any-key", "/admin/traffic", "admin") == "gated"
+
+
+def test_an_unrecognised_verdict_is_gated_not_allowed(monkeypatch):
+    """An authority that answers something the host does not understand is
+    the incident's other half: unknown must be closed, never permitted."""
+    from lib import hub_client
+
+    monkeypatch.setenv("CROSS_APP_WEBHOOK_SECRET", "x" * 32)
+    monkeypatch.setattr(hub_client, "_post",
+                        lambda *a, **kw: {"verdict": "probably-fine"})
+    assert hub_client.verify("k", "/admin/traffic", "admin") == "gated"
+
+    monkeypatch.setattr(hub_client, "_post", lambda *a, **kw: None)
+    assert hub_client.verify("k", "/admin/traffic", "admin") == "gated"
+
+    monkeypatch.setattr(hub_client, "_post", lambda *a, **kw: {})
+    assert hub_client.verify("k", "/admin/traffic", "admin") == "gated"
+
+
+def test_a_tier_lookalike_is_not_the_tier(monkeypatch):
+    """pipdocs' fix: reject case and whitespace lookalikes, not one literal."""
+    from lib import access
+
+    for lookalike in ("Public", "PUBLIC", " public", "public ", "pub lic"):
+        monkeypatch.setattr(access, "effective_tier", lambda _p: lookalike)
+        verdict = access.check("/anything")
+        assert verdict != "allow", (
+            f"the tier {lookalike!r} was treated as `public`"
+        )
