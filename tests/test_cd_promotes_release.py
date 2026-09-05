@@ -214,3 +214,48 @@ def test_the_concurrency_groups_cannot_collide():
     assert _cd()["concurrency"]["cancel-in-progress"] is False, (
         "a deploy that cancels itself mid-promote leaves release half-written"
     )
+
+
+# ------------- the verify job can generate the app's own robots.txt (19) --
+
+
+def test_the_verify_job_installs_the_app_before_running_the_battery():
+    """1.6.44 item 19's rider, and it is not a nicety.
+
+    `ai_bot_posture` compares the SERVED robots.txt against the one this app
+    GENERATES, by importing run.py. A verify job that only checks the repo
+    out cannot do that import, so the row records `skip` — and a skip inside
+    a green run is a row that compared nothing while reading as fine. That is
+    item 19's own failure mode reproduced inside the check written to catch
+    it, which is why the install step is pinned rather than remembered.
+    """
+    cd = CD.read_text()
+    verify = cd.split("  verify:", 1)[1]
+    assert "pip install -r requirements.txt" in verify, (
+        "the verify job does not install the app — ai_bot_posture will skip "
+        "forever and the run will still be green"
+    )
+    # It must come BEFORE the battery, or the battery runs against a bare
+    # checkout anyway.
+    install_at = verify.index("pip install -r requirements.txt")
+    battery_at = verify.index("Network smoke battery")
+    assert install_at < battery_at, (
+        "the app is installed after the battery has already run"
+    )
+
+
+def test_the_batterys_own_side_is_importable_from_a_checkout():
+    """The other half: the module the battery imports must exist and must
+    generate from the app's registered config rather than reimplementing it."""
+    import ast
+
+    src = (REPO / "lib" / "robots_expected.py").read_text()
+    tree = ast.parse(src)
+    functions = {n.name for n in ast.walk(tree)
+                 if isinstance(n, ast.FunctionDef)}
+    assert {"generated_text", "expected_directives"} <= functions
+    assert "generate_robots_txt" in src, (
+        "the app's side is reimplemented rather than generated — the battery "
+        "would compare the edge against this file's beliefs about the config"
+    )
+    assert "_robots_config" in src

@@ -186,6 +186,24 @@ jobs:
           fi
           echo "::notice::verifying build $build (this run's sha)"
 
+      # The battery needs the APP IMPORTABLE, not just checked out (1.6.44
+      # item 19's rider). `ai_bot_posture` compares the SERVED robots.txt
+      # against the one this app GENERATES, and it generates it by importing
+      # run.py through lib/robots_expected. Without the dependencies that
+      # import raises, the row records `skip`, and a skip in a green run is
+      # a row that compared nothing while reading as fine — which is the
+      # exact failure mode item 19 exists to prevent, reproduced inside the
+      # check meant to catch it.
+      #
+      # Same two-command install as the Dockerfile and ci.yml: markdown2dash
+      # 0.1.2 declares gunicorn<22 against the CVE-driven >=23 floor, so it
+      # goes in --no-deps.
+      - name: Install the app so the battery can generate its own robots.txt
+        run: |
+          pip install -r requirements.txt
+          pip install --no-deps markdown2dash==0.1.2
+          pip install .
+
       # The network battery first: it is the same script, with the same check
       # names, that CI ran against the container this deploy shipped. A name
       # that passed in CI and fails here isolates the fault to the deploy.
