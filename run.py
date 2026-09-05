@@ -119,6 +119,35 @@ from dash_improve_my_llms import (  # noqa: E402
 # 2.8.1 will write the resolved `policy` on every event; until then it is
 # None and the rollup groups it as "default". Nothing here waits on it.
 LLMS_PKG_FLOOR = (2, 8, 0)
+# NOT MOVED TO (2, 9, 4) ON THIS HOST, deliberately, and the reason is a
+# defect rather than a preference (1.6.44 item 1, this fork's correction).
+# The template raised this floor in the SAME commit that pinned
+# requirements.txt to `==2.9.4`; the two are one mechanism. The 1.6.44 seat
+# rider holds this fork's requirements line at `>=2.8.0` until the fleet pin
+# lands at 1.6.45, and a boot floor above what requirements can guarantee is
+# not a guard — it is a brick. This host cannot measure which wheel its
+# production image carries (a local build resolved 2.9.2 only through a
+# Docker cache HIT), so raising the floor here risks refusing to boot the
+# next deploy over a version nobody has read. `llms_version` on /healthz,
+# added in this same commit, is what makes that measurable; the floor moves
+# with the pin at 1.6.45, once the wire has answered.
+
+
+def _llms_config_accepts(name: str) -> bool:
+    """Whether the INSTALLED ``LLMSConfig`` takes ``name`` as a kwarg.
+
+    The version this host serves is not determined by requirements.txt while
+    the line is a `>=` floor, and `LLMSConfig` gained the three `openapi_*`
+    kwargs at 2.9.4. Introspection is the only thing that can answer for the
+    wheel actually present.
+    """
+    try:
+        import inspect
+
+        return name in inspect.signature(LLMSConfig.__init__).parameters
+    except Exception:
+        return False
+
 
 # Analytics tracking
 from lib.analytics_tracker import tracker  # noqa: E402
@@ -135,6 +164,7 @@ from lib.constants import (  # noqa: E402
     SAME_AS,
     SITE_BRAND,
     SITE_DESCRIPTION,
+    SITE_SHORT_NAME,
     require_owned_base_url,
 )
 from lib import network_directory  # noqa: E402
@@ -542,7 +572,40 @@ ACCESS_ENABLED = _access.configure(
 # Wire up the package: /llms.txt, /<page>/llms.txt, /robots.txt, /sitemap.xml,
 # bot-detection middleware, and (on Dash 4.3+) MCP resource registration.
 # Works under Flask, FastAPI, and Quart — no gating needed.
-add_llms_routes(app, LLMSConfig(warn_missing_llms_doc=True))
+# THE HOST OWNS ITS API IDENTITY (1.6.44 item 1, dimll 2.9.4's three
+# `openapi_*` knobs). The package cannot read `/healthz` and must not
+# guess: without these the FastAPI lane's OpenAPI document is titled
+# "FastAPI" with version "0.1.0" — which, on THIS host, is what an agent
+# discovering the site through `/openapi.json` reads as the app's name,
+# because production runs `DASH_BACKEND=fastapi`. The knobs exist so
+# identity flows one way, from lib/constants — the same values the browser
+# title, the og: tags and the network registry read.
+#
+# `openapi_version` is the API SURFACE's version: it moves when the routes
+# change shape, so it is pinned here rather than wired to APP_VERSION or a
+# changelog. The resolved PACKAGE version is reported on `/healthz` as
+# `llms_version` (item 1's rider) — two different questions, deliberately
+# not the same field.
+#
+# PASSED ONLY WHERE THE INSTALLED PACKAGE ACCEPTS THEM, and that guard is
+# this fork's, not the template's. The template pinned `==2.9.4` in the
+# same commit, so it could pass the kwargs unconditionally; the 1.6.44
+# seat rider holds this host's requirements line at `>=2.8.0` until the
+# fleet pin lands at 1.6.45. A `>=` line does not determine what a cached
+# Docker layer installed — this repo's own memory records an image
+# resolving 2.9.2 through a cache HIT — and `LLMSConfig` at 2.8.0 takes no
+# `openapi_*` kwarg at all, so an unconditional call is a TypeError at
+# import time on exactly the image nobody here can measure. Introspection
+# decouples the knob from the floor: newer wheels get the identity, older
+# ones boot. Delete this guard when the pin lands.
+_llms_config_kwargs = {"warn_missing_llms_doc": True}
+if _llms_config_accepts("openapi_title"):
+    _llms_config_kwargs.update(
+        openapi_title=f"{SITE_SHORT_NAME} API",
+        openapi_description=SITE_DESCRIPTION,
+        openapi_version="1.0",
+    )
+add_llms_routes(app, LLMSConfig(**_llms_config_kwargs))
 
 # The ledger row (sync item 12, dimll 2.8.0): the package emits one event per
 # corpus document it serves and does no I/O with it; the tracker keeps it

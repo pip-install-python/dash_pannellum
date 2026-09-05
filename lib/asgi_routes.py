@@ -20,7 +20,7 @@ from typing import List, Optional
 
 import dash
 from fastapi import APIRouter, FastAPI, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ---------------------------------------------------------------------------
@@ -63,7 +63,30 @@ class HealthResponse(BaseModel):
     defect the wait was written to prevent, reintroduced per-backend; found
     on llms-2plot-dev, 2026-08-23). This host runs FastAPI in production,
     so this model is the one that decides what the hub actually sees.
+
+    AND IT HAPPENED AGAIN, HERE, MEASURED (1.6.44 item 20 on this fork):
+    the docstring above was already right and the class was still narrowing
+    the payload. ``llms_version`` landed in ``health_payload`` on the
+    template two days ago — added SPECIFICALLY so this host's unmeasurable
+    package version would stop being self-reported — and this lane dropped
+    it in silence, because a pydantic ``response_model`` discards every
+    field it does not declare. The seat measured
+    ``"llms_version" in json`` → **False** on this very host at 03:14Z while
+    the Flask lane would have served it. Prose describing a trap does not
+    prevent the trap.
+
+    Two defences now, because either alone has failed here: the known keys
+    are declared below (so Swagger still documents them), and
+    ``extra="allow"`` keeps whatever ``health_payload`` adds NEXT without
+    anyone remembering to come here. tests/test_healthz_shape.py guards the
+    CLASS rather than these two fields — every key the payload produces must
+    reach the wire on whichever lane answers.
     """
+
+    # See the paragraph above: this is the half that does not depend on
+    # anyone remembering. A model that silently narrows the payload is the
+    # "two lanes are different documents" trap wearing a type annotation.
+    model_config = ConfigDict(extra="allow")
 
     ok: bool = True
     backend: str
@@ -83,6 +106,12 @@ class HealthResponse(BaseModel):
     app: Optional[str] = None
     reporting: Optional[bool] = None
     geo: Optional[dict] = None
+    # The resolved dash-improve-my-llms version (item 1's rider) and the
+    # ledger block (item 20). `llms_version` is Optional because
+    # health_payload OMITS it when the import itself fails, which is the
+    # finding rather than a value to invent.
+    llms_version: Optional[str] = None
+    ledger: Optional[dict] = None
 
 
 # ---------------------------------------------------------------------------
