@@ -264,6 +264,13 @@ CATEGORY_ORDER = [
     "Getting started",
     "Panoramas",
     "Interaction",
+    # Legal sits LAST among the app's own sections and therefore directly
+    # above Admin, which the navbar renders separately (1.6.44 item 15). The
+    # drop words the placement as "between Components and Admin"; this fork
+    # has no Components category either — its component pages are the
+    # Panoramas and Interaction sections above — so last-of-the-app's-own is
+    # the same position expressed in this repo's vocabulary.
+    "Legal",
 ]
 
 # Network-wide community links — identical on every host.
