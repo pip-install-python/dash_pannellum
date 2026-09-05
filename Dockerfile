@@ -75,7 +75,8 @@ COPY scripts ./scripts
 # The 2plot.ai hub's hourly sweep probes /healthz; give the container the
 # same check so an unhealthy process is visible to the orchestrator too.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl -fsS http://localhost:${PORT:-8561}/healthz || exit 1
+    CMD curl -fsS -A "curl/8 2plot-internal/probe" \
+        http://localhost:${PORT:-8561}/healthz || exit 1
 
 # Render injects PORT and ignores EXPOSE; env vars come from render.yaml /
 # the dashboard — NEVER bake .env.

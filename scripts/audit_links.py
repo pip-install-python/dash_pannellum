@@ -96,11 +96,11 @@ SSL_CONTEXT = _ssl_context()
 # as a visitor (or as a "bot") in another satellite's ledger. See
 # lib/constants.INTERNAL_UA. Third-party hosts simply ignore it.
 try:
-    from lib.constants import INTERNAL_UA as _INTERNAL_UA
+    from lib.constants import PROBE_UA_SUFFIX as _PROBE
 except Exception:  # pragma: no cover — running outside a checkout
-    _INTERNAL_UA = "2plot-internal/1.0 (+https://2plot.ai/docs/satellite-analytics)"
+    _PROBE = "2plot-internal/probe"
 
-AUDIT_UA = f"Mozilla/5.0 (compatible; link-audit/1.0) {_INTERNAL_UA}"
+AUDIT_UA = f"Mozilla/5.0 (compatible; link-audit/1.0) {_PROBE}"
 
 # The IN-PROCESS client's UA, and it is a different problem from AUDIT_UA
 # above (notes 70/74, sync item 18's third lane). A bare `.test_client()`
@@ -113,7 +113,7 @@ AUDIT_UA = f"Mozilla/5.0 (compatible; link-audit/1.0) {_INTERNAL_UA}"
 CLIENT_UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 "
-    + _INTERNAL_UA + " link-audit"
+    + _PROBE + " link-audit"
 )
 CLIENT_HEADERS = {"User-Agent": CLIENT_UA}
 # Set on the client itself as well as per call (`environ_base`): a per-call
