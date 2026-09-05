@@ -643,3 +643,71 @@ def test_the_counter_takes_its_reference_explicitly():
         "the reference kit cannot be given explicitly — a fork cannot ask "
         "the question the item is about"
     )
+
+
+# --------------------------- the promote sampler (1.6.44 item 17) --
+
+
+def test_the_trap_carries_the_samplers_three_phrases():
+    """Item 17's detect, read with whitespace FLATTENED — which is item 13's
+    rule applied to item 17's detect, and necessary: every one of these
+    fragments wraps a line in this file."""
+    flat = " ".join((REPO / ".claude" / "CLAUDE.md").read_text().split())
+    for phrase in ("eight samples at 45", "completed_at", "unreadable"):
+        assert phrase in flat, f"the trap does not name {phrase!r}"
+
+
+def test_the_trap_was_amended_in_place_not_appended():
+    """The item says AMEND. An appended second copy leaves the older, thinner
+    version in the place a reader looks first — which is the failure the
+    healthz/build line in this same file was carrying until item 14."""
+    kit = (REPO / ".claude" / "CLAUDE.md").read_text()
+    assert kit.count("Which branch Render actually builds") == 1, (
+        "the leaflet trap appears twice — item 17 was appended, not merged"
+    )
+    trap = kit.split("Which branch Render actually builds", 1)[1]
+    trap = trap.split("\n- ", 1)[0]
+    assert "promote_sampler.py" in trap, (
+        "the sampler is named somewhere else in the file, not inside the "
+        "trap it is the concrete form of"
+    )
+
+
+def test_the_sampler_exists_and_refuses_a_bracket_it_did_not_observe():
+    import sys
+
+    sys.path.insert(0, str(REPO / "scripts"))
+    import promote_sampler
+
+    assert promote_sampler.UNREADABLE != promote_sampler.OLD, (
+        "unreadable folded into old — the sampler would invent a bracket"
+    )
+    assert promote_sampler.ATTEMPTS >= 2, "an un-retried sample is blind at "\
+        "the restart, which is where the bracket lives"
+    assert promote_sampler.classify(None, "abc123def456") == \
+        promote_sampler.UNREADABLE
+    assert promote_sampler.classify("abc123def456789", "abc123def456") == \
+        promote_sampler.NEW
+    assert promote_sampler.classify("999999999999", "abc123def456") == \
+        promote_sampler.OLD
+
+
+def test_the_sampler_probes_this_host_with_the_fleet_convention():
+    """It is a probe. Item 4's convention applies to it like everything else,
+    and a sampler that inflated the ledger it is watching would be its own
+    confound."""
+    import sys
+
+    sys.path.insert(0, str(REPO / "scripts"))
+    import promote_sampler
+
+    from lib.constants import BASE_URL, INTERNAL_UA_TOKEN, PROBE_UA_SUFFIX
+
+    assert promote_sampler.DEFAULT_URL.startswith(BASE_URL), (
+        f"the sampler points at {promote_sampler.DEFAULT_URL}, not this host"
+    )
+    assert PROBE_UA_SUFFIX in promote_sampler.PROBE_UA
+    assert INTERNAL_UA_TOKEN in promote_sampler.PROBE_UA
+    assert promote_sampler.PROBE_UA.startswith("curl/"), (
+        "an engineless probe classifies crawler-lane (item 4)"
+    )

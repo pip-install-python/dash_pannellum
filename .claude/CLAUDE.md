@@ -237,9 +237,27 @@ they win.
   is STRONG EVIDENCE, not proof — a queued or slow build could produce
   the same shape. The canonical discriminator is unchanged and still
   owed here: the first push that goes RED on main must leave `release`
-  unmoved and the wire unchanged. Worth taking on the next promote; it
-  costs one background sampler and converts "asserted" into "strongly
-  evidenced".
+  unmoved and the wire unchanged.
+  THE SAMPLER IS WRITTEN NOW (1.6.44 item 17), so the next promote does
+  not need anyone to re-derive the method under time pressure:
+  `python3 scripts/promote_sampler.py --sha <sha>` — eight samples at 45
+  second intervals, started FROM THE MOMENT OF THE PUSH. Three things a
+  hand-written watcher gets wrong and this does not.
+  ONE LOOP, ONE TIMELINE: the wire and the run state are read in the same
+  iteration, because two separate reconstructions invite exactly the
+  arithmetic error the measurement exists to avoid.
+  TIME AGAINST THE PROMOTE STEP'S `completed_at`, never the deploy JOB's
+  — the job CONTAINS the build-match wait, so it completes when the wait
+  SEES the swap and therefore tracks the swap, not the promote; on the
+  template's two measured pairs it landed at -13s and 0s, useless either
+  way.
+  RETRY EACH SAMPLE and record `unreadable` as a state DISTINCT from
+  `old`: the container restart lands exactly where the bracket needs its
+  sample (twice out of two on the template), so an un-retried loop is
+  systematically blind at the only moment that matters, and folding
+  unreadable into old invents a bracket nobody observed. The sampler
+  REFUSES to report a bracket it did not observe — a single "new" sample
+  cannot say what it followed.
 - **Verify the artifact the claim is about, and say which one you
   measured.** This one was earned HERE and the fleet trap names this
   host: a props table absent from the crawler document is a defect of
