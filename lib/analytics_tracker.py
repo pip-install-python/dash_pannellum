@@ -545,17 +545,69 @@ def _prune(rows, stamp=_visit_stamp):
     return rows
 
 
+def _vendor_class_from_registry(vendor_key):
+    """The package's own registry answer for ``vendor_key``, or None.
+
+    Not a second opinion and not a local table — ``get_vendor()`` reads the
+    same registry ``classify()`` does. It exists only for the version window
+    where the classification carries a vendor and no class.
+
+    THAT WINDOW IS NOT THIS HOST, and the difference is two surfaces the
+    fleet note conflates. Measured here at dimll 2.8.0: ``classify()``
+    ALREADY returns ``vendor_class`` — claudebot 'training', googlebot
+    'traditional' — while ``_ledger.EVENT_FIELDS`` has 15 keys and no
+    ``vendor_class`` at all, and it is the EVENT that gains it at 2.9.2. So
+    the null classes the fleet measured came from the read-event path
+    dropping the key at the app boundary, not from ``classify()`` withholding
+    it. The prefer branch below is the live one here and this fallback is
+    dormant — kept because it is the right shape for a fork on an older
+    wheel, and because it costs nothing when the value is present.
+
+    A hand-written map would be the other defect entirely — this repo's kit
+    carries a whole paragraph about the User-Agent list that lived in this
+    module for a year and filed ClaudeBot as *search*. The registry is the
+    one source; this only asks it a second question.
+    """
+    if not vendor_key:
+        return None
+    try:
+        from dash_improve_my_llms.vendors import get_vendor
+
+        vendor = get_vendor(vendor_key)
+        return getattr(vendor, "cls", None) if vendor else None
+    except Exception:
+        return None
+
+
 def _classify(user_agent, client_ip=None):
-    """The one classifier, made total: never raises, always has ``lane``."""
+    """The one classifier, made total: never raises, always has ``lane``.
+
+    PREFER, THEN DERIVE (1.6.44 item 8). dash-improve-my-llms 2.9.x puts
+    ``vendor_class`` on the classification itself. A fork that computes the
+    class unconditionally OVERWRITES the package's answer with its own, and
+    the two disagree the moment the registry learns a vendor the fork does
+    not — which is the whole reason there is one classifier. So the package's
+    value is taken whenever it is present, and the registry is consulted only
+    where it is absent (a floor below 2.9.2, or a vendor the classifier
+    matched without a class).
+
+    Both halves are pinned in tests/test_analytics_classifier.py with a
+    CONFLICTING fixture: "prefer" that never derives and "derive" that never
+    prefers both pass a one-sided test.
+    """
     try:
         c = classify(user_agent or "", client_ip)
     except Exception:
         c = {}
+    vendor_key = c.get("vendor_key")
+    vendor_class = c.get("vendor_class")
+    if vendor_class is None:
+        vendor_class = _vendor_class_from_registry(vendor_key)
     return {
         "lane": c.get("lane") or "browser",
         "bot_type": c.get("bot_type"),
-        "vendor_key": c.get("vendor_key"),
-        "vendor_class": c.get("vendor_class"),
+        "vendor_key": vendor_key,
+        "vendor_class": vendor_class,
         "verified": c.get("verified") or "n/a",
     }
 

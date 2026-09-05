@@ -112,3 +112,119 @@ def test_the_module_carries_no_user_agent_list():
                  if t in code]
     assert survivors == [], f"a hand-written UA list is back: {survivors}"
     assert "from dash_improve_my_llms import classify" in src
+
+
+# ---------------------------------- item 8: prefer, then derive (1.6.44) --
+
+
+def test_the_packages_vendor_class_passes_through_untouched():
+    """A CONFLICTING fixture, or the test cannot fail.
+
+    "prefer" that never derives and "derive" that never prefers both pass a
+    one-sided test, so the package's answer here is deliberately one the
+    registry would NOT give: if the fork ever recomputes unconditionally,
+    this value changes and the assertion says so.
+    """
+    import lib.analytics_tracker as mod
+
+    calls = []
+
+    def fake_classify(ua, ip=None):
+        return {"lane": "crawler", "bot_type": "training",
+                "vendor_key": "gptbot", "vendor_class": "a-class-only-the-"
+                                                        "package-knows",
+                "verified": "n/a"}
+
+    def fake_registry(vendor_key):
+        calls.append(vendor_key)
+        return "training"
+
+    original_classify = mod.classify
+    original_registry = mod._vendor_class_from_registry
+    mod.classify = fake_classify
+    mod._vendor_class_from_registry = fake_registry
+    try:
+        result = mod._classify("anything")
+    finally:
+        mod.classify = original_classify
+        mod._vendor_class_from_registry = original_registry
+
+    assert result["vendor_class"] == "a-class-only-the-package-knows", (
+        "the fork overwrote the package's own vendor_class"
+    )
+    assert calls == [], (
+        "the registry was consulted while the package had already answered"
+    )
+
+
+def test_the_registry_is_consulted_only_where_the_class_is_absent():
+    """The mirror direction. Both are needed: see the docstring above."""
+    import lib.analytics_tracker as mod
+
+    calls = []
+
+    def fake_classify(ua, ip=None):
+        return {"lane": "crawler", "bot_type": "training",
+                "vendor_key": "gptbot", "vendor_class": None,
+                "verified": "n/a"}
+
+    def fake_registry(vendor_key):
+        calls.append(vendor_key)
+        return "derived-from-the-registry"
+
+    original_classify = mod.classify
+    original_registry = mod._vendor_class_from_registry
+    mod.classify = fake_classify
+    mod._vendor_class_from_registry = fake_registry
+    try:
+        result = mod._classify("anything")
+    finally:
+        mod.classify = original_classify
+        mod._vendor_class_from_registry = original_registry
+
+    assert calls == ["gptbot"], "the registry was never asked"
+    assert result["vendor_class"] == "derived-from-the-registry"
+
+
+def test_the_registry_helper_reads_the_packages_registry_not_a_local_map():
+    """No hand-written table. This repo lost a year to one."""
+    from lib.analytics_tracker import _vendor_class_from_registry
+
+    assert _vendor_class_from_registry(None) is None
+    assert _vendor_class_from_registry("") is None
+    # An unknown key must be None rather than a guess.
+    assert _vendor_class_from_registry("not-a-real-vendor-key-xyz") is None
+    # A real one answers, and the answer agrees with classify()'s.
+    from dash_improve_my_llms import classify
+
+    c = classify("Mozilla/5.0 (compatible; GPTBot/1.2; +https://openai.com/gptbot)")
+    if c.get("vendor_key") and c.get("vendor_class"):
+        assert _vendor_class_from_registry(c["vendor_key"]) == c["vendor_class"], (
+            "the registry and the classifier disagree — they must be one source"
+        )
+
+
+def test_where_this_hosts_null_classes_actually_came_from():
+    """The correction this item forced, pinned so it is not re-derived.
+
+    The fleet note reads "`vendor_class` ARRIVES ON THE EVENT at 2.9.2", and
+    a reader takes that to mean classify() withholds it below 2.9.2. It does
+    not: at the wheel resolved here, classify() returns vendor_class and
+    EVENT_FIELDS does not carry the key at all. The null classes came from
+    the read-event path dropping it at the app boundary — a different surface
+    and a different fix.
+
+    If a future wheel adds vendor_class to EVENT_FIELDS this goes red, which
+    is the signal to re-read the comment in _vendor_class_from_registry, not
+    a failure.
+    """
+    from dash_improve_my_llms import classify
+    from dash_improve_my_llms._ledger import EVENT_FIELDS
+
+    c = classify("Mozilla/5.0 (compatible; ClaudeBot/1.0; +claudebot@anthropic.com)")
+    has_on_classification = c.get("vendor_class") is not None
+    has_on_event = "vendor_class" in EVENT_FIELDS
+    assert has_on_classification or has_on_event, (
+        "neither surface carries vendor_class — the derive branch is now the "
+        "only path and its docstring is stale"
+    )
