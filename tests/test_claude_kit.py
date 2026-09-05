@@ -574,3 +574,72 @@ def test_the_progression_is_written_down_not_just_the_verdict():
     flat = _flat_kit()
     assert "raw grep -> comment strip -> `ast.parse`".lower() in flat or (
         "raw grep" in flat and "comment strip" in flat)
+
+
+# ------------------------- traps-section currency (1.6.44 item 14) --
+
+
+def test_the_traps_counter_exists_and_reads_this_repo():
+    """Item 14's detect: the tool prints the PAIR, not a single number."""
+    import sys
+
+    sys.path.insert(0, str(REPO / "scripts"))
+    from kit_traps import THIS_KIT, trap_entries
+
+    entries = trap_entries(THIS_KIT.read_text())
+    assert len(entries) >= 25, (
+        f"the traps section has {len(entries)} entries — this fork was 14 "
+        "against the template's 28 before 1.6.44 item 14 merged the gap"
+    )
+
+
+def test_the_counter_matches_loosely_on_purpose():
+    """A strict check would train forks to paste over their own adaptations,
+    which is the opposite of the item. Both directions are asserted so the
+    threshold cannot quietly become exact-match or always-true."""
+    import sys
+
+    sys.path.insert(0, str(REPO / "scripts"))
+    from kit_traps import OVERLAP, _present
+
+    template_entry = ("Repeated HTTP headers survive only if you keep them: "
+                      "both dict(resp.headers) and a comprehension keep the "
+                      "LAST value per name.")
+    merged = ("Repeated HTTP headers survive only if you keep them: both "
+              "dict(resp.headers) and a comprehension keep the LAST value "
+              "per name. On THIS host the edge also folds them.")
+    unrelated = ("Anonymous api.github.com is 60 requests an hour and a poll "
+                 "loop spends the budget.")
+
+    assert 0 < OVERLAP < 1, OVERLAP
+    assert _present(template_entry, [merged]), (
+        "a fork's merged wording reads as absence — the check is too strict"
+    )
+    assert not _present(template_entry, [unrelated]), (
+        "an unrelated entry counts as present — the check is vacuous"
+    )
+
+
+def test_the_counter_takes_its_reference_explicitly():
+    """This fork's adaptation, and it is load-bearing.
+
+    The template's version hardcodes its own repo as the template and takes
+    the FORK as its argument. Run unchanged from here it would report THIS
+    repo as the reference and the other tree as behind it — the comparison
+    inverted, printed in the fleet's own words, and green either way.
+    """
+    src = (REPO / "scripts" / "kit_traps.py").read_text()
+    assert "DEFAULT_TEMPLATE" in src
+    assert "THIS_KIT" in src
+    import sys
+
+    sys.path.insert(0, str(REPO / "scripts"))
+    import inspect
+
+    import kit_traps
+
+    main_src = inspect.getsource(kit_traps.main)
+    assert "argv[2]" in main_src, (
+        "the reference kit cannot be given explicitly — a fork cannot ask "
+        "the question the item is about"
+    )

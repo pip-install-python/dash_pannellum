@@ -163,10 +163,21 @@ they win.
   hit — the requirements line changing IS the cache bust, and floors
   live in several encodings (requirements, run.py's boot floor,
   tests, CI): grep the number, move every one.
-- `/healthz` build == HEAD is the deploy proof; a missing geo block
-  on dimll ≥2.7 means the cache trap fired (unless DIVERGENCES.md
-  says this host's healthz is deliberately minimal).
-- Probe with GET, not HEAD — HEAD responses omit the Link headers,
+- `/healthz` build == HEAD **of `release`** is the deploy proof on this
+  release-branch host — read the fuller trap further down before acting
+  on this line. Written unqualified here until 2026-09-05, when item
+  14's counter showed the two lines sitting 20-odd entries apart: a
+  reader who met this one first was sent to the wrong ref, and `main`
+  ahead of `release` reads as drift instead of what it is (an
+  uncertified push pending). A missing geo block on dimll ≥2.7 means
+  the cache trap fired (unless DIVERGENCES.md says this host's healthz
+  is deliberately minimal). The general form, since this file is now
+  long enough to contain its own contradictions: when a trap is later
+  corrected, AMEND THE ORIGINAL — a correction that only appends
+  leaves the wrong answer in the place a reader looks first.
+- Always GET, never HEAD — and the mechanism, which the fleet got wrong
+  through two rounds of diagnoses before measuring it, and which was
+  re-measured here 2026-09-05. HEAD responses omit the Link headers,
   and on THIS host HEAD was also answering 405 where GET answered
   200. Measured 2026-09-05, fastapi lane, dimll 2.8.0: 11/15 pairs.
   `/healthz` 405'd to every UA and `/` 405'd to a browser UA while
@@ -178,6 +189,14 @@ they win.
   `dash-improve-my-llms==2.9.4`, NOT on the calendar: 2.9.4 adds
   HEAD at the route level, below it the shim is load-bearing. The
   Link-header half of this trap still stands on its own.
+  GET THE LAYER RIGHT — two rounds of fleet diagnoses said "Starlette"
+  and three probes went looking in the wrong package.
+  `starlette.routing.Route` DOES add HEAD wherever GET is present
+  (`self.methods.add("HEAD")`, the same courtesy Werkzeug does); it is
+  FastAPI's `APIRoute` that takes `methods` literally, which is why a
+  route declared `@router.get(...)` returns 405. A HEAD probe therefore
+  tells you about the ROUTER'S METHOD TABLE and never about the
+  document. GET is never wrong.
 - Run-watchers keyed on a commit sha can match Dependabot's runs on
   the same sha — key on the workflow path (cd.yml) instead.
 - The browser lane and the machine lane are different documents;
@@ -339,3 +358,104 @@ they win.
   reliably a raw grep reports the defect it documents the absence of.
   The detects most likely to be wrong are the ones on the
   best-explained code.
+
+#### Fleet traps merged at 1.6.44 item 14
+
+This section was 14 entries against the template's 28 when
+`scripts/kit_traps.py` was first run here. The kit is contract-class,
+so no sync copies it and nothing printed the gap — a fork can be
+acting on a fact the fleet retired months ago. These are MERGED, not
+installed over; where this host's shape differs, the entry says so.
+
+- A FORK'S TRAPS SECTION DRIFTS BEHIND THE TEMPLATE'S SILENTLY (1.6.44
+  item 14, emojimart 166e33a). Detect, printed as a PAIR:
+  `python3 scripts/kit_traps.py` reports `fork N / template M` and
+  names what is missing. This fork's own first reading was **14 / 28**.
+  Matching is by token overlap of each trap's opening sentence, not by
+  exact text, because a fork is EXPECTED to merge a trap into its own
+  wording — the check exists to find a trap that never arrived, never
+  to police prose, and a strict check would train forks to paste over
+  their own adaptations. Note the counter is generous in the other
+  direction too: it reported this host's release-branch trap as missing
+  when a fuller version of it was present under different wording, so
+  read the MISSING list before acting on it.
+- Any throwaway Python probe a session writes against a production host
+  needs the certifi SSL context AND a retry guard. Fixing the shipped
+  tools does not cover the next ad-hoc script — a seat hit
+  `CERTIFICATE_VERIFY_FAILED` in a hand-written CD watcher an hour
+  after shipping that exact fix inside both live tools, and another hit
+  it plus an `IncompleteRead` on a chunked response in one session. A
+  seat habit, not a repo contract, which is what this file is for.
+- SUPERSESSION: cd.yml's build-match wait cannot tell "not deployed
+  yet" from "already replaced" — both look like a live build that is
+  not the sha it wants. A bot-merged PR lands with ZERO workflow runs
+  on the merge sha (anti-recursion) yet still reaches production,
+  because the deploy hook builds branch HEAD; two human pushes inside
+  one deploy window, or hook dispatch lag, produce the same state. The
+  wait fails FAST when the live build is a DESCENDANT of the wanted sha
+  (compare API) rather than going red at timeout — that is the
+  diagnosis, and it works whoever merged.
+- Anonymous api.github.com is 60 requests/hour. With no `gh` and no
+  token, read a run ONCE after CI's own jobs report complete — a blind
+  20 s poll loop spends the whole budget reading rate-limit bodies as
+  "not done yet". THIS SEAT HAS NO `gh` AT ALL (`command not found`),
+  so this is the live condition here, not a contingency.
+- A GitHub API JSON body WITHOUT the field you asked for
+  (`workflow_runs` absent, not empty) is a rate-limit error body, never
+  an empty result — check the field exists before trusting the answer.
+- `git fetch` before any audit: the fan-out pushes to these repos now,
+  and a checkout current yesterday is 2–3 merges behind origin/main
+  today.
+- A failed STEP is not a failed RUN. A job with
+  `continue-on-error: true` reports its step red and the RUN still
+  concludes `success`; the reverse bites too — a green-looking job list
+  under a run whose conclusion is `failure`. Read the run's
+  `conclusion`, then the annotations; never infer either from the
+  other.
+- Never round-trip JSON through zsh `echo` — it interprets the `\n`
+  inside a multi-line commit message and hands the parser real control
+  characters. Pipe curl straight into `python3`, or use `printf '%s'`.
+  (This seat's shell IS zsh.)
+- Repeated HTTP headers survive only if you keep them: both
+  `dict(resp.headers)` and `{k: v for k, v in resp.headers.items()}`
+  keep the LAST value per name, and dimll emits several `Link`
+  headers. Iterate the items or ask for `get_all(name)`; in curl,
+  `-D -` and read the raw block. `scripts/network_smoke.py`'s
+  `_Headers` is this repo's implementation (1.6.44 item 5) — and
+  `get_all()` is necessary and NOT sufficient, because over HTTP/2
+  this host's edge serves both discovery relations comma-FOLDED in one
+  header. Parse the relations out of the values.
+- Name the crawler UA when you probe the machine lane. Which document a
+  host serves is decided by the package's UA classification, not by the
+  absence of a UA: curl's default `curl/8.x` receives the crawler
+  document while a Chrome UA gets the app shell. Either lane can be the
+  one you did not mean to test, so send `-A "<a real crawler UA>"` and
+  confirm from the BODY which document came back.
+- Headless browsers are CRAWLER-lane from dash-improve-my-llms 2.9.0
+  (`HeadlessChrome/…` and Playwright UAs classify
+  `lane: crawler, bot_type: monitor, vendor_key: headless`; 2.8.0 said
+  browser). A host that screenshots ITSELF for social cards now
+  receives the crawler document unless the screenshot service sends a
+  non-headless UA. THIS REPO SCREENSHOTS ITSELF —
+  `scripts/make_social_card.py` — so if a card goes blank or textual
+  after a floor bump, look here before the template. It has not fired
+  yet only because this fork is still on 2.8.0.
+- And the same family one turn later, MEASURED TWICE by two seats
+  within an hour, so it is a property of the technique and not one
+  seat's slip: extracting a package constant with
+  `re.search(r"EVENT_FIELDS = \((.*?)\)", src, re.S)` truncated at a
+  `)` inside a COMMENT in the middle of the tuple, printed eight of
+  sixteen fields, and reported `'ua' present: False` — confidently,
+  with a number beside it. When you parse a language construct out of
+  source with a regex, check the count against something independent
+  before you believe a negative.
+- A shell's CWD can shadow an installed package, and it produces the
+  most convincing wrong answer of the family: measuring `EVENT_FIELDS`
+  across two dimll versions with the cwd inside an unpacked wheel made
+  `import dash_improve_my_llms` resolve from the CURRENT DIRECTORY, and
+  two readings of ONE wheel were reported as two versions agreeing — in
+  a CHANGELOG and a shipped spec. The load-bearing half was true and
+  the supporting detail was invented. When comparing versions,
+  `print(mod.__file__)` and assert it is the path you meant. IMPORT THE
+  THING; parsing the constant out of source is not the safe
+  alternative, it is the trap above.
