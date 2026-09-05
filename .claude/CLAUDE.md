@@ -166,7 +166,18 @@ they win.
 - `/healthz` build == HEAD is the deploy proof; a missing geo block
   on dimll ≥2.7 means the cache trap fired (unless DIVERGENCES.md
   says this host's healthz is deliberately minimal).
-- Probe with GET, not HEAD — HEAD responses omit the Link headers.
+- Probe with GET, not HEAD — HEAD responses omit the Link headers,
+  and on THIS host HEAD was also answering 405 where GET answered
+  200. Measured 2026-09-05, fastapi lane, dimll 2.8.0: 11/15 pairs.
+  `/healthz` 405'd to every UA and `/` 405'd to a browser UA while
+  answering 200 to a crawler — the package's prerender replying
+  above the router, which is why a one-UA HEAD check reads green on
+  a broken host. Fixed at 1.6.44 by porting `HeadAsGetMiddleware`
+  (template 1.6.32, written after a measurement on this very repo
+  and never ported until now). The shim's retirement is gated on
+  `dash-improve-my-llms==2.9.4`, NOT on the calendar: 2.9.4 adds
+  HEAD at the route level, below it the shim is load-bearing. The
+  Link-header half of this trap still stands on its own.
 - Run-watchers keyed on a commit sha can match Dependabot's runs on
   the same sha — key on the workflow path (cd.yml) instead.
 - The browser lane and the machine lane are different documents;

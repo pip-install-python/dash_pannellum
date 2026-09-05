@@ -241,6 +241,35 @@ prevent, not the fix.
     carries no options and is the one the builder legitimately expanded.
     Pinned both ways in `tests/test_api_lane_parity.py`.
 
+16. **`HeadAsGetMiddleware` is PRESENT here while the template has
+    retired it** (template 1.6.44 item 2). The template pinned
+    `dash-improve-my-llms==2.9.4` in item 1's own commit and measured
+    15/15 HEAD/GET pairs without the shim, because 2.9.4 walks the
+    router and adds HEAD wherever GET is allowed — Dash's
+    lifespan-registered page catch-all included. This fork's
+    requirements line is held at `>=2.8.0` by the 1.6.44 seat rider
+    until the fleet pin lands at 1.6.45, and item 2's own note gates
+    the retirement on the PIN, not the date: below 2.9.4 the shim is
+    load-bearing.
+
+    The shim arriving here at 1.6.44 rather than 1.6.32 is DRIFT
+    CORRECTED, not a new divergence. The template's docstring for the
+    class names the two hosts the original defect was measured on and
+    one of them is this repo — the fix was written because of
+    pannellum and never ported to it. Measured here before porting,
+    fastapi lane, in-process, dimll 2.8.0: **11/15 without, 15/15
+    with**. `/healthz` answered 405 to HEAD on all three UAs — the
+    path the 2plot.ai hub sweeps hourly — and `/` answered 405 to a
+    browser UA while answering 200 to a crawler one, the prerender
+    replying above the router being exactly the shadow that hides this
+    defect from any single-UA check.
+
+    A sync that reads item 2 and deletes this class must first move
+    the requirements line and re-measure the fifteen pairs, with the
+    disable proved non-vacuous. `tests/test_head_parity.py` holds all
+    of it, and `tests/conftest.py` gained `Client.head()` — without
+    which the suite structurally could not see this.
+
 ## Byte-owned paths
 
 Paths this fork owns byte-for-byte. The F3b fan-out never overwrites

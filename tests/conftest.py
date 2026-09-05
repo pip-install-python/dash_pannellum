@@ -202,6 +202,34 @@ class Client:
         r = self._raw.get(path, headers=headers)
         return Response(r.status_code, r.text, dict(r.headers))
 
+    def head(self, path: str, user_agent: str = BROWSER_UA) -> Response:
+        """The same request with the HEAD method, for parity checks.
+
+        Added for 1.6.44 item 2, which cannot be asserted without it: this
+        host runs the ASGI lane in production, where a route declared
+        ``@router.get(...)`` answers 405 to HEAD unless something stands in
+        front of the router. The suite could not see that until now — and
+        did not, for twelve template releases.
+
+        No body is read. A HEAD response has none by definition, and the
+        status and headers are the whole subject.
+        """
+        headers = {"User-Agent": user_agent}
+
+        if self._kind == "werkzeug":
+            r = self._raw.head(path, headers=headers)
+            return Response(r.status_code, "", dict(r.headers))
+
+        if self._kind == "quart":
+            async def fetch():
+                r = await self._raw.head(path, headers=headers)
+                return r.status_code, "", dict(r.headers)
+
+            return Response(*self._loop.run_until_complete(fetch()))
+
+        r = self._raw.head(path, headers=headers)
+        return Response(r.status_code, "", dict(r.headers))
+
 
 @pytest.fixture(scope="session")
 def client(app):
