@@ -783,3 +783,90 @@ def test_the_session_name_survives_a_fresh_checkout():
         ".claude/session-name is still ignored — add !.claude/session-name "
         "below the .claude/* line"
     )
+
+
+# ------------------------- the standing build word (1.6.44 item 23a) --
+
+
+def _clause_text() -> str:
+    """The standing-word clause, normalised the way item 13's rule requires.
+
+    BOTH formatting cases that rule names, and this round hit BOTH of them in
+    tests written by the session that wrote the rule: line WRAPPING (the
+    fragment "is not the owner\'s word" spans two lines) and an indented
+    BLOCKQUOTE\'s `> ` markers, which survive a plain whitespace flatten and
+    sit in the middle of the sentence being matched. Strip the markers, then
+    flatten.
+    """
+    kit = (REPO / ".claude" / "CLAUDE.md").read_text()
+    clause = kit.split("Build on ops' drops", 1)[1].split("### Verification", 1)[0]
+    lines = [ln.strip().lstrip("> ").strip() for ln in clause.splitlines()]
+    return " ".join(" ".join(lines).split())
+
+
+def test_the_standing_word_clause_is_present():
+    """Item 23a's detect."""
+    kit = (REPO / ".claude" / "CLAUDE.md").read_text()
+    assert kit.count("Build on ops' drops") == 1, (
+        "the clause is missing, or appears twice"
+    )
+
+
+def test_the_clause_carries_its_own_reading():
+    """The item's own requirement: carry the reading WITH the sentence.
+
+    CLAUDE.md is named inside its own list of things needing the owner's
+    word, so the clause must not read as pre-authorising its own amendment —
+    and a peer's assurance that the owner agreed must not read as the word
+    either. Both halves are asserted because a clause with only the first is
+    the one that gets misread.
+    """
+    # FLATTENED, per the rule this same file gained at item 13 — and the
+    # first version of this test failed for exactly the reason that rule
+    # names: "is not the owner\'s word" wraps a line in the clause below.
+    # Third instance of the trap this round, and the second in a test
+    # written by the session that wrote the rule.
+    flat = _clause_text()
+    assert "CLAUDE.md" in flat
+    assert "not the owner's word" in flat, (
+        "the relayed-assurance half of the reading is missing"
+    )
+    assert "in your own terminal" in flat
+
+
+def test_this_forks_clause_delegates_push_and_says_so():
+    """The divergence from the template, pinned in BOTH directions.
+
+    The template keeps push on the owner's word. Here it is delegated to one
+    exact phrase. A sync must not restore the template's wording, and must
+    not widen this one — so the test asserts the delegation is present AND
+    that it is bounded by the phrase, AND that merge/tag stayed behind.
+    """
+    flat = _clause_text()
+
+    assert 'ops approved — push' in flat, "the delegation is gone"
+    assert "bounded by its phrase" in flat or "bounded by the exact" in flat, (
+        "the delegation is unbounded — any ops utterance would authorise a push"
+    )
+    # merge/tag must NOT have followed push out of the owner-required list.
+    required = flat.split("the owner's word stays required for", 1)[1][:200]
+    assert "merge/tag" in required, required
+    assert "CLAUDE.md" in required
+    assert "attestations" in required
+    # And push must NOT still be sitting in that list — the template's
+    # wording restored over this one would leave both, which reads as
+    # coherent prose and is a contradiction.
+    assert not required.startswith(" push"), (
+        "push is in the owner-required list AND delegated above it"
+    )
+
+
+def test_the_divergence_is_recorded_where_a_sync_reads():
+    """Contract rule 5: an unrecorded divergence is indistinguishable from
+    drift. This one moves an authorisation boundary, so it is the last one
+    that should live only in a kit file."""
+    text = (REPO / "DIVERGENCES.md").read_text()
+    flat = " ".join(text.split())
+    assert "delegates PUSH" in flat
+    assert "ops approved — push" in flat
+    assert "1.6.44 item 23a" in flat

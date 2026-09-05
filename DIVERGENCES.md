@@ -290,6 +290,26 @@ prevent, not the fix.
     of it, and `tests/conftest.py` gained `Client.head()` — without
     which the suite structurally could not see this.
 
+17. **The standing-word clause delegates PUSH; the template's does
+    not** (1.6.44 item 23a). The template's kit reads "the owner's
+    word stays required for **push**/merge/tag". This fork's reads
+    "…and push when ops says 'ops approved — push'; the owner's word
+    stays required for merge/tag, …" — push moved out of the
+    owner-required list and onto a conditional, by an owner decision
+    for COMPONENT FORKS, given only after the ops seat has read this
+    tree's stack and mirrored its CI legs. Typed by the owner in this
+    repo's terminal 2026-09-05; ops relayed the amended wording and
+    this seat held until the owner typed it.
+
+    A sync must not restore the template's wording, and must not
+    widen this one either. The delegation is bounded by the exact
+    phrase "ops approved — push": ops saying anything else about
+    pushing is not authorisation, and neither is a third party
+    quoting ops. Merge, tag, CLAUDE.md, secrets and env, anything
+    changing what the site collects, and attestations all still need
+    the owner's word in this terminal — including the next amendment
+    of this clause, because CLAUDE.md is named inside it.
+
 ## Recorded conventions (not divergences)
 
 Guard entries. Every line here documents something this repo MATCHES
